@@ -2,7 +2,7 @@
 ## Title: Brutosaur Tracker
 ## Notes: Reins of the Mighty Caravan Brutosaur will be yours one day, right?
 ## Author: Shelinka
-## Version: 1.0.6
+## Version: 1.0.7
 ## IconTexture: Interface\Icons\inv_brontosaurusmount
 ## SavedVariables: BrutosaurTrackerDB
 ## X-Curse-Project-Name: Brutosaur Tracker

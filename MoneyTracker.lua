@@ -174,6 +174,12 @@ if C_Transmog and C_Transmog.ApplyPending then
     end)
 end
 
+if TakeTaxiNode then
+    hooksecurefunc("TakeTaxiNode", function()
+        SetOneShotContext(CAT.TAXI)
+    end)
+end
+
 
 if C_AuctionHouse and C_AuctionHouse.PlaceBid then
     hooksecurefunc(C_AuctionHouse, "PlaceBid", function()

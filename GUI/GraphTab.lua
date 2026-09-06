@@ -39,7 +39,7 @@ function GUI.CreateGraphTab(parent)
 
     local emptyLabel = graphFrame:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
     emptyLabel:SetPoint("CENTER")
-    emptyLabel:SetText("No history yet - a snapshot is taken once per day (on login/logout).")
+    emptyLabel:SetText("Not enough history yet for this range - a point is recorded every 2 hours while you play.")
     emptyLabel:Hide()
 
     local function Refresh()
@@ -52,11 +52,7 @@ function GUI.CreateGraphTab(parent)
             charCount, charCount == 1 and "" or "s"))
 
         local days = BT.db.settings.graphRangeDays or 7
-        local series = BT:GetSnapshotSeries(days)
-        local points = {}
-        for _, s in ipairs(series) do
-            table.insert(points, { x = s.t, y = s.gold })
-        end
+        local points = BT:GetGoldTimeSeries(days)
 
         local goal = BT:GetGoldGoal()
         graph:SetData(points, goal > 0 and goal or nil)

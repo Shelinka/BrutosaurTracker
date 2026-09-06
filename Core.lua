@@ -22,8 +22,8 @@ BT.CATEGORY = {
 }
 
 BT.CATEGORY_ORDER = {
-    "TAXI", "GUILD", "OTHER", "TRANSMOG", "TRADE", "MAIL",
-    "QUESTS", "LOOT", "REPAIR", "TRAINING", "AUCTIONS", "MERCHANTS",
+    "AUCTIONS", "GUILD", "LOOT", "MAIL", "MERCHANTS", "OTHER",
+    "QUESTS", "REPAIR", "TAXI", "TRADE", "TRAINING", "TRANSMOG",
 }
 
 BT.CATEGORY_LABEL = {
@@ -50,11 +50,12 @@ local function GetDefaults()
             graphRangeDays = 7,
             goldGoal = 0,
             minimap = { hide = false, minimapPos = 220 },
+            lastHistoryCompactMonth = nil,
         },
 
         characters = {},
 
-        snapshots = {},
+        history = {},
 
         ledger = {},
 
@@ -239,13 +240,19 @@ eventFrame:SetScript("OnEvent", function(self, event, ...)
         end
     elseif event == "PLAYER_LOGIN" then
         BT:UpdateCharacterRecord()
-        BT:TakeDailySnapshot()
+        BT:CompactOldGoldHistoryIfNewMonth()
+        BT:RecordGoldHistoryPoint()
+        if not BT.historyTicker then
+            BT.historyTicker = C_Timer.NewTicker(BT.HISTORY_INTERVAL, function()
+                BT:RecordGoldHistoryPoint()
+            end)
+        end
         if BT.RefreshMinimapButton then BT:RefreshMinimapButton() end
         print(string.format("|cff20d947Brutosaur Tracker|r v%s loaded and tracking %s.", BT.VERSION, BT:GetCharDisplayName()))
     elseif event == "PLAYER_ENTERING_WORLD" then
         BT:UpdateCharacterRecord()
     elseif event == "PLAYER_LOGOUT" then
-        BT:TakeDailySnapshot()
+        BT:RecordGoldHistoryPoint()
         local guid = BT:GetCharGUID()
         local rec = guid and BT.db.characters[guid]
         print(string.format("|cff20d947Brutosaur Tracker|r saving now - %s: %s copper (%s)",
