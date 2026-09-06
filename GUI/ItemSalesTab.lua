@@ -134,7 +134,7 @@ function GUI.CreateItemSalesTab(parent)
             local row = rows[i]
             if entry then
                 row.icon:SetTexture(entry.icon or "Interface\\Icons\\INV_Misc_QuestionMark")
-                row.name:SetText(entry.name or ("Item #" .. entry.itemID))
+                row.name:SetText(entry.name or "Unknown Item")
                 row.qty:SetText(tostring(entry.qty))
                 row.total:SetText(GUI.FormatMoney(entry.totalCopper))
                 local avgPrice = entry.qty > 0 and (entry.totalCopper / entry.qty) or 0

@@ -47,7 +47,7 @@ local function GetDefaults()
         version = 1,
 
         settings = {
-            graphRangeDays = 365,
+            graphRangeDays = 7,
             goldGoal = 0,
             minimap = { hide = false, minimapPos = 220 },
         },
@@ -59,9 +59,6 @@ local function GetDefaults()
         ledger = {},
 
         itemSales = {},
-
-
-        auctionSnapshot = {},
     }
 end
 
@@ -137,7 +134,7 @@ function BT:UpdateCharacterRecord()
     local _, classFile = UnitClass("player")
     local rec = EnsureTable(self.db.characters, guid, {})
 
-    rec.gold = newGold
+    rec.gold = GetMoney()
     rec.class = classFile
     rec.faction = UnitFactionGroup("player")
     rec.name = name

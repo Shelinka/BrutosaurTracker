@@ -2,9 +2,10 @@ local ADDON_NAME, BT = ...
 local GUI = BT.GUI
 
 local RANGE_OPTIONS = {
+    { label = "Last 24 Hours", days = 1 },
     { label = "Last 7 Days", days = 7 },
-    { label = "Last 30 Days", days = 30 },
-    { label = "Last 90 Days", days = 90 },
+    { label = "Last Month", days = 30 },
+    { label = "Last Half a Year", days = 182 },
     { label = "Last Year", days = 365 },
     { label = "All Time", days = 3650 },
 }
@@ -50,7 +51,7 @@ function GUI.CreateGraphTab(parent)
         subLabel:SetText(string.format("%d character%s tracked + live warband bank  (see the Characters tab for a breakdown)",
             charCount, charCount == 1 and "" or "s"))
 
-        local days = BT.db.settings.graphRangeDays or 365
+        local days = BT.db.settings.graphRangeDays or 7
         local series = BT:GetSnapshotSeries(days)
         local points = {}
         for _, s in ipairs(series) do
