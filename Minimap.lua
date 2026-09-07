@@ -4,7 +4,7 @@ local button
 
 local function UpdatePosition()
     local angle = math.rad(BT.db.settings.minimap.minimapPos or 220)
-    local radius = 80
+    local radius = (Minimap:GetWidth() / 2) + 10
     button:ClearAllPoints()
     button:SetPoint("CENTER", Minimap, "CENTER", radius * math.cos(angle), radius * math.sin(angle))
 end

@@ -245,7 +245,10 @@ eventFrame:SetScript("OnEvent", function(self, event, ...)
         BT:UpdateCharacterRecord()
         BT:CompactYesterdayGoldHistoryIfNewDay()
         BT:CompactOldGoldHistoryIfNewMonth()
-        BT:RecordGoldHistoryPoint()
+        C_Timer.After(3, function()
+            BT:RecordGoldHistoryPoint()
+            if BT.mainFrame and BT.mainFrame:IsShown() then BT.mainFrame.RefreshAll() end
+        end)
         if BT.RefreshMinimapButton then BT:RefreshMinimapButton() end
         print(string.format("|cff20d947Brutosaur Tracker|r v%s loaded and tracking %s.", BT.VERSION, BT:GetCharDisplayName()))
     elseif event == "PLAYER_ENTERING_WORLD" then
