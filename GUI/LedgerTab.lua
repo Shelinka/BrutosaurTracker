@@ -1,22 +1,13 @@
 local ADDON_NAME, BT = ...
 local GUI = BT.GUI
 
-local RANGE_OPTIONS = {
-    { label = "Today", days = 1 },
-    { label = "Last 7 Days", days = 7 },
-    { label = "Last 30 Days", days = 30 },
-    { label = "Last Year", days = 365 },
-    { label = "All Time", days = 36500 },
-}
-
 local ROW_HEIGHT = 22
 
 function GUI.CreateLedgerTab(parent)
     local panel = CreateFrame("Frame", nil, parent)
     panel:SetAllPoints()
 
-    local dropdown = CreateFrame("Frame", "BrutosaurTrackerLedgerRangeDropdown", panel, "UIDropDownMenuTemplate")
-    dropdown:SetPoint("TOPRIGHT", -4, -8)
+    local dropdown
 
     local header = CreateFrame("Frame", nil, panel)
     header:SetPoint("TOPLEFT", 16, -46)
@@ -106,7 +97,7 @@ function GUI.CreateLedgerTab(parent)
         totalNet:SetPoint("LEFT", totalRow, "LEFT", 600, 0)
 
     local function Refresh()
-        local days = panel.selectedDays or 30
+        local days = BT.db.settings.graphRangeDays or 7
         local sums = {}
         for _, catKey in ipairs(BT.CATEGORY_ORDER) do
             sums[catKey] = { incoming = 0, outgoing = 0 }
@@ -142,21 +133,8 @@ function GUI.CreateLedgerTab(parent)
     end
     panel.Refresh = Refresh
 
-    UIDropDownMenu_Initialize(dropdown, function(self, level)
-        for _, opt in ipairs(RANGE_OPTIONS) do
-            local info = UIDropDownMenu_CreateInfo()
-            info.text = opt.label
-            info.func = function()
-                panel.selectedDays = opt.days
-                UIDropDownMenu_SetText(dropdown, opt.label)
-                Refresh()
-            end
-            UIDropDownMenu_AddButton(info)
-        end
-    end)
-    UIDropDownMenu_SetWidth(dropdown, 130)
-    panel.selectedDays = 30
-    UIDropDownMenu_SetText(dropdown, "Last 30 Days")
+    dropdown = GUI.CreateSharedRangeDropdown(panel, Refresh)
+    dropdown:SetPoint("TOPRIGHT", -4, -8)
 
     panel:SetScript("OnShow", Refresh)
     return panel

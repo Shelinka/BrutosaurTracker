@@ -2,11 +2,48 @@ local ADDON_NAME, BT = ...
 
 local button
 
+local minimapShapes = {
+    ["ROUND"] = { true, true, true, true },
+    ["SQUARE"] = { false, false, false, false },
+    ["CORNER-TOPLEFT"] = { false, false, false, true },
+    ["CORNER-TOPRIGHT"] = { false, false, true, false },
+    ["CORNER-BOTTOMLEFT"] = { false, true, false, false },
+    ["CORNER-BOTTOMRIGHT"] = { true, false, false, false },
+    ["SIDE-LEFT"] = { false, true, false, true },
+    ["SIDE-RIGHT"] = { true, false, true, false },
+    ["SIDE-TOP"] = { false, false, true, true },
+    ["SIDE-BOTTOM"] = { true, true, false, false },
+    ["TRICORNER-TOPLEFT"] = { false, true, true, true },
+    ["TRICORNER-TOPRIGHT"] = { true, false, true, true },
+    ["TRICORNER-BOTTOMLEFT"] = { true, true, false, true },
+    ["TRICORNER-BOTTOMRIGHT"] = { true, true, true, false },
+}
+
 local function UpdatePosition()
     local angle = math.rad(BT.db.settings.minimap.minimapPos or 220)
-    local radius = (Minimap:GetWidth() / 2) + 10
+    local x, y = math.cos(angle), math.sin(angle)
+
+    local quadrant = 1
+    if x < 0 then quadrant = quadrant + 1 end
+    if y > 0 then quadrant = quadrant + 2 end
+
+    local shape = (GetMinimapShape and GetMinimapShape()) or "ROUND"
+    local isRoundInThisQuadrant = minimapShapes[shape] and minimapShapes[shape][quadrant]
+
+    local w = (Minimap:GetWidth() / 2) + 6
+    local h = (Minimap:GetHeight() / 2) + 6
+
+    if isRoundInThisQuadrant then
+        x, y = x * w, y * h
+    else
+        -- square-edge quadrant: clamp to the corner instead of the circle
+        local diagW, diagH = w * 1.41421356, h * 1.41421356
+        x = math.max(-w, math.min(x * diagW, w))
+        y = math.max(-h, math.min(y * diagH, h))
+    end
+
     button:ClearAllPoints()
-    button:SetPoint("CENTER", Minimap, "CENTER", radius * math.cos(angle), radius * math.sin(angle))
+    button:SetPoint("CENTER", Minimap, "CENTER", x, y)
 end
 
 local function OnUpdate(self)
@@ -30,15 +67,23 @@ function BT:CreateMinimapButton()
     button:RegisterForClicks("LeftButtonUp", "RightButtonUp")
     button:RegisterForDrag("LeftButton")
 
+
+    local icon = button:CreateTexture(nil, "BACKGROUND")
+    icon:SetSize(20, 20)
+    icon:SetTexture(BT.ICON)
+    icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+    icon:SetPoint("CENTER", 0, 0)
+    button.icon = icon
+
     local overlay = button:CreateTexture(nil, "OVERLAY")
     overlay:SetSize(53, 53)
     overlay:SetTexture("Interface\\Minimap\\MiniMap-TrackingBorder")
     overlay:SetPoint("TOPLEFT")
 
-    local icon = button:CreateTexture(nil, "BACKGROUND")
-    icon:SetSize(20, 20)
-    icon:SetTexture(BT.ICON)
-    icon:SetPoint("CENTER", 0, 1)
+    local highlight = button:CreateTexture(nil, "HIGHLIGHT")
+    highlight:SetTexture("Interface\\Minimap\\UI-Minimap-ZoomButton-Highlight")
+    highlight:SetBlendMode("ADD")
+    highlight:SetAllPoints(icon)
 
     button:SetScript("OnDragStart", function(self) self.dragging = true end)
     button:SetScript("OnDragStop", function(self) self.dragging = false end)
@@ -56,6 +101,8 @@ function BT:CreateMinimapButton()
         GameTooltip:Show()
     end)
     button:SetScript("OnLeave", function() GameTooltip:Hide() end)
+
+    Minimap:HookScript("OnSizeChanged", UpdatePosition)
 
     UpdatePosition()
     return button

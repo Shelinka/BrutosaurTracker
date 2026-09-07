@@ -45,6 +45,48 @@ function GUI.CreateTabButton(parent, text, onClick)
     return btn
 end
 
+
+GUI.RANGE_OPTIONS = {
+    { label = "Last 24 Hours", days = 1 },
+    { label = "Last 7 Days", days = 7 },
+    { label = "Last Month", days = 30 },
+    { label = "Last Half a Year", days = 182 },
+    { label = "Last Year", days = 365 },
+    { label = "All Time", days = 3650 },
+}
+
+function GUI.CreateSharedRangeDropdown(parent, onChange)
+    local dropdown = CreateFrame("Frame", nil, parent, "UIDropDownMenuTemplate")
+
+    UIDropDownMenu_Initialize(dropdown, function(self, level)
+        for _, opt in ipairs(GUI.RANGE_OPTIONS) do
+            local info = UIDropDownMenu_CreateInfo()
+            info.text = opt.label
+            info.func = function()
+                BT.db.settings.graphRangeDays = opt.days
+                dropdown:RefreshText()
+                if onChange then onChange(opt.days) end
+            end
+            UIDropDownMenu_AddButton(info)
+        end
+    end)
+    UIDropDownMenu_SetWidth(dropdown, 140)
+
+    function dropdown:RefreshText()
+        local days = BT.db.settings.graphRangeDays or 7
+        for _, opt in ipairs(GUI.RANGE_OPTIONS) do
+            if opt.days == days then
+                UIDropDownMenu_SetText(dropdown, opt.label)
+                return
+            end
+        end
+        UIDropDownMenu_SetText(dropdown, "Last 7 Days")
+    end
+
+    dropdown:RefreshText()
+    return dropdown
+end
+
 -- i don't wanna use libs so.. this will have to do ?
 
 local PAD_LEFT = 58   -- for gold-amount labels
@@ -116,14 +158,24 @@ function GUI.NewGraph(parent, width, height)
         return label
     end
 
-    function graph:SetData(points, goalY)
+
+    function graph:SetData(points, goalY, windowStart, windowEnd)
         self:Clear()
-        if #points < 2 then return end
+        if not points or #points == 0 then return end
 
         local w, h = self.area:GetWidth(), self.area:GetHeight()
         if w <= 0 or h <= 0 then return end
 
-        local minX, maxX = points[1].x, points[#points].x
+        local minX = windowStart or points[1].x
+        local maxX = windowEnd or points[#points].x
+        if maxX <= minX then maxX = minX + 86400 end
+
+        -- a single known value still draws a flat line across the window
+        -- instead of nothing
+        if #points == 1 then
+            points = { points[1], { x = maxX, y = points[1].y } }
+        end
+
         local minY, maxY = math.huge, -math.huge
         for _, p in ipairs(points) do
             if p.y < minY then minY = p.y end
@@ -138,12 +190,12 @@ function GUI.NewGraph(parent, width, height)
         if yRange <= 0 then yRange = math.max(10000, maxY * 0.1) end
         minY = math.max(0, minY - yRange * 0.1)
         maxY = maxY + yRange * 0.1
-        if maxX == minX then maxX = minX + 86400 end
 
         local plotW = w - PAD_LEFT - PAD_RIGHT
         local plotH = h - PAD_TOP - PAD_BOTTOM
 
         local function toScreen(px, py)
+            px = math.max(minX, math.min(maxX, px))
             local sx = PAD_LEFT + (px - minX) / (maxX - minX) * plotW
             local sy = PAD_BOTTOM + (py - minY) / (maxY - minY) * plotH
             return sx, sy
@@ -156,14 +208,19 @@ function GUI.NewGraph(parent, width, height)
             AddLabel(self, PAD_LEFT - 6, sy - 6, "BOTTOMRIGHT", GUI.FormatMoneyShort(val) .. "g")
         end
 
+
         local spanSeconds = maxX - minX
         local dateFormat
-        if spanSeconds > 200 * 86400 then
-            dateFormat = "%b %Y"
-        elseif spanSeconds > 20 * 86400 then
+        if spanSeconds <= 1 * 86400 then
+            dateFormat = "%H:%M"
+        elseif spanSeconds <= 10 * 86400 then
+            dateFormat = "%m/%d %Hh"
+        elseif spanSeconds <= 60 * 86400 then
+            dateFormat = "%m/%d"
+        elseif spanSeconds <= 200 * 86400 then
             dateFormat = "%b %d"
         else
-            dateFormat = "%m/%d"
+            dateFormat = "%b %Y"
         end
         for i = 0, NUM_X_TICKS do
             local tX = minX + spanSeconds * (i / NUM_X_TICKS)
@@ -175,6 +232,7 @@ function GUI.NewGraph(parent, width, height)
             local _, gy = toScreen(minX, goalY)
             AddLine(self, PAD_LEFT, gy, w - PAD_RIGHT, gy, 1.5, 1, 0.82, 0, 0.8)
         end
+
 
         local prevSx, prevSy
         for _, p in ipairs(points) do

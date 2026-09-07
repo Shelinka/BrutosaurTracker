@@ -1,15 +1,6 @@
 local ADDON_NAME, BT = ...
 local GUI = BT.GUI
 
-local RANGE_OPTIONS = {
-    { label = "Last 24 Hours", days = 1 },
-    { label = "Last 7 Days", days = 7 },
-    { label = "Last Month", days = 30 },
-    { label = "Last Half a Year", days = 182 },
-    { label = "Last Year", days = 365 },
-    { label = "All Time", days = 3650 },
-}
-
 function GUI.CreateGraphTab(parent)
     local panel = CreateFrame("Frame", nil, parent)
     panel:SetAllPoints()
@@ -22,13 +13,18 @@ function GUI.CreateGraphTab(parent)
     subLabel:SetPoint("TOPLEFT", totalLabel, "BOTTOMLEFT", 0, -4)
     panel.subLabel = subLabel
 
-    -- Range dropdown
-    local dropdown = CreateFrame("Frame", "BrutosaurTrackerGraphRangeDropdown", panel, "UIDropDownMenuTemplate")
+    local sinceLabel = panel:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+    sinceLabel:SetPoint("TOPLEFT", subLabel, "BOTTOMLEFT", 0, -2)
+    panel.sinceLabel = sinceLabel
+
+    local dropdown = GUI.CreateSharedRangeDropdown(panel, function()
+        panel.Refresh()
+    end)
     dropdown:SetPoint("TOPRIGHT", -4, -8)
     panel.dropdown = dropdown
 
     local graphFrame = CreateFrame("Frame", nil, panel, "InsetFrameTemplate")
-    graphFrame:SetPoint("TOPLEFT", 16, -70)
+    graphFrame:SetPoint("TOPLEFT", 16, -78)
     graphFrame:SetPoint("BOTTOMRIGHT", -16, 40)
     panel.graphFrame = graphFrame
 
@@ -51,33 +47,18 @@ function GUI.CreateGraphTab(parent)
         subLabel:SetText(string.format("%d character%s tracked + live warband bank  (see the Characters tab for a breakdown)",
             charCount, charCount == 1 and "" or "s"))
 
+        sinceLabel:SetText("Tracking since " .. date("%b %d, %Y", BT:GetTrackingSinceDate()))
+
         local days = BT.db.settings.graphRangeDays or 7
-        local points = BT:GetGoldTimeSeries(days)
+        local points, windowStart, windowEnd = BT:GetGoldTimeSeries(days)
 
         local goal = BT:GetGoldGoal()
-        graph:SetData(points, goal > 0 and goal or nil)
-        emptyLabel:SetShown(#points < 2)
+        graph:SetData(points, goal > 0 and goal or nil, windowStart, windowEnd)
+        emptyLabel:SetShown(#points == 0)
+
+        dropdown:RefreshText()
     end
     panel.Refresh = Refresh
-
-    UIDropDownMenu_Initialize(dropdown, function(self, level)
-        for _, opt in ipairs(RANGE_OPTIONS) do
-            local info = UIDropDownMenu_CreateInfo()
-            info.text = opt.label
-            info.func = function()
-                BT.db.settings.graphRangeDays = opt.days
-                UIDropDownMenu_SetText(dropdown, opt.label)
-                Refresh()
-            end
-            UIDropDownMenu_AddButton(info)
-        end
-    end)
-    UIDropDownMenu_SetWidth(dropdown, 130)
-    for _, opt in ipairs(RANGE_OPTIONS) do
-        if opt.days == (BT.db and BT.db.settings.graphRangeDays) then
-            UIDropDownMenu_SetText(dropdown, opt.label)
-        end
-    end
 
     panel:SetScript("OnShow", Refresh)
     return panel

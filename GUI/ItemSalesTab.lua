@@ -1,14 +1,6 @@
 local ADDON_NAME, BT = ...
 local GUI = BT.GUI
 
-local RANGE_OPTIONS = {
-    { label = "Last 7 Days", days = 7 },
-    { label = "Last 30 Days", days = 30 },
-    { label = "Last 90 Days", days = 90 },
-    { label = "Last Year", days = 365 },
-    { label = "All Time", days = 36500 },
-}
-
 local SORT_COLUMNS = {
     { key = "name", label = "Item", defaultDir = 1 },
     { key = "qty", label = "Qty Sold", defaultDir = -1 },
@@ -30,8 +22,7 @@ function GUI.CreateItemSalesTab(parent)
     local panel = CreateFrame("Frame", nil, parent)
     panel:SetAllPoints()
 
-    local dropdown = CreateFrame("Frame", "BrutosaurTrackerSalesRangeDropdown", panel, "UIDropDownMenuTemplate")
-    dropdown:SetPoint("TOPRIGHT", -4, -8)
+    local dropdown
 
     local searchBox = CreateFrame("EditBox", nil, panel, "InputBoxTemplate")
     searchBox:SetSize(180, 22)
@@ -152,7 +143,7 @@ function GUI.CreateItemSalesTab(parent)
     end
 
     local function Refresh()
-        local days = panel.selectedDays or 30
+        local days = BT.db.settings.graphRangeDays or 7
         fullList = BT:GetItemSalesSummary(days)
         RefreshRows()
     end
@@ -197,21 +188,8 @@ function GUI.CreateItemSalesTab(parent)
         self:ClearFocus()
     end)
 
-    UIDropDownMenu_Initialize(dropdown, function(self, level)
-        for _, opt in ipairs(RANGE_OPTIONS) do
-            local info = UIDropDownMenu_CreateInfo()
-            info.text = opt.label
-            info.func = function()
-                panel.selectedDays = opt.days
-                UIDropDownMenu_SetText(dropdown, opt.label)
-                Refresh()
-            end
-            UIDropDownMenu_AddButton(info)
-        end
-    end)
-    UIDropDownMenu_SetWidth(dropdown, 130)
-    panel.selectedDays = 30
-    UIDropDownMenu_SetText(dropdown, "Last 30 Days")
+    dropdown = GUI.CreateSharedRangeDropdown(panel, Refresh)
+    dropdown:SetPoint("TOPRIGHT", -4, -8)
 
     panel:SetScript("OnShow", Refresh)
     return panel

@@ -91,15 +91,40 @@ function BT:CompactOldGoldHistoryIfNewMonth()
     self.db.history = compacted
 end
 
+
 function BT:GetGoldTimeSeries(days)
-    local cutoff = time() - days * 86400
+    local windowEnd = time()
+    local windowStart = windowEnd - days * 86400
+
     local points = {}
+    local lastBefore = nil
+
     for _, entry in ipairs(self.db.history) do
-        if entry.t >= cutoff then
+        if entry.t < windowStart then
+            if not lastBefore or entry.t > lastBefore.t then
+                lastBefore = entry
+            end
+        elseif entry.t <= windowEnd then
             table.insert(points, { x = entry.t, y = entry.gold })
         end
     end
-    return points
+
+    if lastBefore then
+        table.insert(points, 1, { x = windowStart, y = lastBefore.gold })
+    end
+
+    return points, windowStart, windowEnd
+end
+
+
+function BT:GetTrackingSinceDate()
+    local earliest = nil
+    for _, entry in ipairs(self.db.history) do
+        if not earliest or entry.t < earliest then
+            earliest = entry.t
+        end
+    end
+    return earliest or time()
 end
 
 function BT:GetGoldGoal()
