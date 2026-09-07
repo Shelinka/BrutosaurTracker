@@ -38,6 +38,11 @@ function GUI.CreateLedgerTab(parent)
     hOutgoing:SetText("Outgoing")
     hOutgoing:SetTextColor(1, 0.82, 0)
 
+        local hNet = header:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        hNet:SetPoint("LEFT", header, "LEFT", 600, 0)
+        hNet:SetText("Net")
+        hNet:SetTextColor(1, 0.82, 0)
+
     local rows = {}
     local rowsContainer = CreateFrame("Frame", nil, panel)
     rowsContainer:SetPoint("TOPLEFT", header, "BOTTOMLEFT", 0, -2)
@@ -69,7 +74,11 @@ function GUI.CreateLedgerTab(parent)
         outFS:SetPoint("LEFT", row, "LEFT", 460, 0)
         outFS:SetJustifyH("LEFT")
 
-        rows[catKey] = { frame = row, incoming = inFS, outgoing = outFS }
+            local netFS = row:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+            netFS:SetPoint("LEFT", row, "LEFT", 600, 0)
+            netFS:SetJustifyH("LEFT")
+
+            rows[catKey] = { frame = row, incoming = inFS, outgoing = outFS, net = netFS }
     end
     rowsContainer:SetHeight(#BT.CATEGORY_ORDER * ROW_HEIGHT)
 
@@ -92,6 +101,9 @@ function GUI.CreateLedgerTab(parent)
 
     local totalOut = totalRow:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     totalOut:SetPoint("LEFT", totalRow, "LEFT", 460, 0)
+
+        local totalNet = totalRow:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        totalNet:SetPoint("LEFT", totalRow, "LEFT", 600, 0)
 
     local function Refresh()
         local days = panel.selectedDays or 30
@@ -120,11 +132,13 @@ function GUI.CreateLedgerTab(parent)
             local row = rows[catKey]
             row.incoming:SetText(s.incoming > 0 and GUI.FormatMoney(s.incoming) or "-")
             row.outgoing:SetText(s.outgoing > 0 and GUI.FormatMoney(s.outgoing) or "-")
+                row.net:SetText(GUI.FormatMoney(s.incoming - s.outgoing))
             totalIncoming = totalIncoming + s.incoming
             totalOutgoing = totalOutgoing + s.outgoing
         end
         totalIn:SetText(GUI.FormatMoney(totalIncoming))
         totalOut:SetText(GUI.FormatMoney(totalOutgoing))
+            totalNet:SetText(GUI.FormatMoney(totalIncoming - totalOutgoing))
     end
     panel.Refresh = Refresh
 
