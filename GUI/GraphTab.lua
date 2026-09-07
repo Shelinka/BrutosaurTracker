@@ -39,7 +39,7 @@ function GUI.CreateGraphTab(parent)
 
     local emptyLabel = graphFrame:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
     emptyLabel:SetPoint("CENTER")
-    emptyLabel:SetText("Not enough history yet for this range - a point is recorded every 2 hours while you play.")
+    emptyLabel:SetText("Not enough history yet for this range - a point is recorded whenever your total gold changes.")
     emptyLabel:Hide()
 
     local function Refresh()

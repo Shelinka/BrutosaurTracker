@@ -18,11 +18,52 @@ function BT:RecordItemSale(name, icon, quantity, totalCopper)
 end
 
 
+local pendingBackfill = {}
+
+local function BackfillMissingIcons(name, icon)
+    if not icon then return end
+    for _, day in pairs(BT.db.itemSales) do
+        local entry = day[name]
+        if entry and not entry.icon then
+            entry.icon = icon
+        end
+    end
+end
+
+function BT:RememberItemIcon(itemID)
+    if not itemID then return end
+    local name, _, _, _, _, _, _, _, _, icon = GetItemInfo(itemID)
+    if name and icon then
+        local cached = self.db.itemIconCache[name]
+        if not cached or cached.icon ~= icon then
+            self.db.itemIconCache[name] = { id = itemID, icon = icon }
+            BackfillMissingIcons(name, icon)
+        end
+    else
+        pendingBackfill[itemID] = true
+    end
+end
+
+local function ScanBagsForIcons()
+    for bag = 0, 5 do
+        local numSlots = C_Container and C_Container.GetContainerNumSlots(bag) or 0
+        for slot = 1, numSlots do
+            local itemID = C_Container.GetContainerItemID(bag, slot)
+            if itemID then
+                BT:RememberItemIcon(itemID)
+            end
+        end
+    end
+end
+
+
 local function ResolveIcon(itemName)
+    local cached = BT.db.itemIconCache[itemName]
+    if cached then return cached.icon end
+
     local _, _, _, _, _, _, _, _, _, icon = GetItemInfo(itemName)
     return icon
 end
-
 
 local function HandleSellerInvoice(mailIndex)
     local invoiceType, itemName, playerName, bid, buyout, deposit, consignment,
@@ -35,8 +76,7 @@ local function HandleSellerInvoice(mailIndex)
     BT:RecordItemSale(itemName, ResolveIcon(itemName), quantity, bid)
 end
 
--- Wrapping (not hooksecurefunc) so the invoice can be read BEFORE the
--- original call runs and potentially removes/changes the mail at that index.
+
 if TakeInboxMoney then
     local original = TakeInboxMoney
     TakeInboxMoney = function(index)
@@ -52,6 +92,50 @@ if AutoLootMailItem then
         return original(index)
     end
 end
+
+
+local iconFrame = CreateFrame("Frame")
+IS.iconFrame = iconFrame
+
+local function TryRegister(evt)
+    pcall(iconFrame.RegisterEvent, iconFrame, evt)
+end
+
+TryRegister("PLAYER_LOGIN")
+TryRegister("BAG_UPDATE_DELAYED")
+TryRegister("GET_ITEM_INFO_RECEIVED")
+
+iconFrame:SetScript("OnEvent", function(self, event, ...)
+    if event == "PLAYER_LOGIN" or event == "BAG_UPDATE_DELAYED" then
+        ScanBagsForIcons()
+    elseif event == "GET_ITEM_INFO_RECEIVED" then
+        local itemID, success = ...
+        if success and pendingBackfill[itemID] then
+            pendingBackfill[itemID] = nil
+            BT:RememberItemIcon(itemID)
+        end
+    end
+end)
+
+local function ItemIDFromItemLocation(itemLocation)
+    if not itemLocation then return nil end
+    if C_Item and C_Item.GetItemID then
+        return C_Item.GetItemID(itemLocation)
+    end
+    return nil
+end
+
+if C_AuctionHouse and C_AuctionHouse.PostItem then
+    hooksecurefunc(C_AuctionHouse, "PostItem", function(itemLocation)
+        BT:RememberItemIcon(ItemIDFromItemLocation(itemLocation))
+    end)
+end
+if C_AuctionHouse and C_AuctionHouse.PostCommodity then
+    hooksecurefunc(C_AuctionHouse, "PostCommodity", function(itemLocation)
+        BT:RememberItemIcon(ItemIDFromItemLocation(itemLocation))
+    end)
+end
+
 
 function BT:GetItemSalesSummary(days)
     local totals = {}

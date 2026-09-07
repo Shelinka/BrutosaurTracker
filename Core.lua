@@ -51,6 +51,7 @@ local function GetDefaults()
             goldGoal = 0,
             minimap = { hide = false, minimapPos = 220 },
             lastHistoryCompactMonth = nil,
+            lastHistoryDayCompact = nil,
         },
 
         characters = {},
@@ -60,6 +61,8 @@ local function GetDefaults()
         ledger = {},
 
         itemSales = {},
+
+        itemIconCache = {},
     }
 end
 
@@ -240,13 +243,9 @@ eventFrame:SetScript("OnEvent", function(self, event, ...)
         end
     elseif event == "PLAYER_LOGIN" then
         BT:UpdateCharacterRecord()
+        BT:CompactYesterdayGoldHistoryIfNewDay()
         BT:CompactOldGoldHistoryIfNewMonth()
         BT:RecordGoldHistoryPoint()
-        if not BT.historyTicker then
-            BT.historyTicker = C_Timer.NewTicker(BT.HISTORY_INTERVAL, function()
-                BT:RecordGoldHistoryPoint()
-            end)
-        end
         if BT.RefreshMinimapButton then BT:RefreshMinimapButton() end
         print(string.format("|cff20d947Brutosaur Tracker|r v%s loaded and tracking %s.", BT.VERSION, BT:GetCharDisplayName()))
     elseif event == "PLAYER_ENTERING_WORLD" then
@@ -259,8 +258,10 @@ eventFrame:SetScript("OnEvent", function(self, event, ...)
             BT:GetCharDisplayName(), rec and tostring(rec.gold) or "?", tostring(guid)))
     elseif event == "PLAYER_MONEY" then
         BT:UpdateCharacterRecord()
+        BT:RecordGoldHistoryPoint()
         if BT.mainFrame and BT.mainFrame:IsShown() then BT.mainFrame.RefreshAll() end
     elseif event == "ACCOUNT_MONEY" then
+        BT:RecordGoldHistoryPoint()
         if BT.mainFrame and BT.mainFrame:IsShown() then BT.mainFrame.RefreshAll() end
     end
 end)

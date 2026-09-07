@@ -1,16 +1,59 @@
 local ADDON_NAME, BT = ...
 
-BT.HISTORY_INTERVAL = 2 * 60 * 60
+local BUCKET_HOURS = 2
+
+local function GetBucketKey(t)
+    local d = date("*t", t)
+    local bucketHour = math.floor(d.hour / BUCKET_HOURS) * BUCKET_HOURS
+    return string.format("%04d%02d%02d%02d", d.year, d.month, d.day, bucketHour)
+end
 
 function BT:RecordGoldHistoryPoint()
+    local total = self:GetTotalGold()
     local history = self.db.history
     local last = history[#history]
-    local now = time()
-    if last and (now - last.t) < self.HISTORY_INTERVAL then
+    if last and last.gold == total then
         return
     end
-    table.insert(history, { t = now, gold = self:GetTotalGold() })
+    table.insert(history, { t = time(), gold = total })
 end
+
+function BT:CompactYesterdayGoldHistoryIfNewDay()
+    local currentDayKey = self:DayKey()
+    if self.db.settings.lastHistoryDayCompact == currentDayKey then
+        return
+    end
+    self.db.settings.lastHistoryDayCompact = currentDayKey
+
+    local history = self.db.history
+    local todayEntries = {}
+    local bestPerBucket = {}
+
+    for _, entry in ipairs(history) do
+        if self:DayKey(entry.t) == currentDayKey then
+            table.insert(todayEntries, entry)
+        else
+            local bucketKey = GetBucketKey(entry.t)
+            local best = bestPerBucket[bucketKey]
+            if not best or entry.gold > best.gold then
+                bestPerBucket[bucketKey] = entry
+            end
+        end
+    end
+
+    local bucketed = {}
+    for _, entry in pairs(bestPerBucket) do
+        table.insert(bucketed, entry)
+    end
+    table.sort(bucketed, function(a, b) return a.t < b.t end)
+
+    local compacted = {}
+    for _, entry in ipairs(bucketed) do table.insert(compacted, entry) end
+    for _, entry in ipairs(todayEntries) do table.insert(compacted, entry) end
+
+    self.db.history = compacted
+end
+
 
 function BT:CompactOldGoldHistoryIfNewMonth()
     local currentMonthKey = date("%Y%m")

@@ -27,14 +27,22 @@ function BT:RecordLedgerEntry(category, deltaCopper)
 end
 
 
+
+local windowGeneration = 0
+
 local function SetWindowContext(cat)
+    windowGeneration = windowGeneration + 1
     MT.windowContext = cat
 end
 
+
 local function ClearWindowContext(cat)
-    if MT.windowContext == cat then
-        MT.windowContext = nil
-    end
+    local gen = windowGeneration
+    C_Timer.After(2, function()
+        if MT.windowContext == cat and windowGeneration == gen then
+            MT.windowContext = nil
+        end
+    end)
 end
 
 local function SetOneShotContext(cat)
