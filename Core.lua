@@ -54,6 +54,8 @@ local function GetDefaults()
             lastHistoryDayCompact = nil,
         },
 
+        warbandGold = 0,
+
         characters = {},
 
         history = {},
@@ -168,14 +170,20 @@ function BT:GetCharacterBreakdown()
 end
 
 
-function BT:GetWarbandGold()
-    if C_Bank and C_Bank.FetchDepositedMoney and Enum and Enum.BankType then
-        local ok, amount = pcall(C_Bank.FetchDepositedMoney, Enum.BankType.Account)
-        if ok and type(amount) == "number" then
-            return amount
-        end
+function BT:UpdateWarbandGoldRecord()
+    if not (C_Bank and C_Bank.FetchDepositedMoney and Enum and Enum.BankType) then
+        return false
     end
-    return 0
+    local ok, amount = pcall(C_Bank.FetchDepositedMoney, Enum.BankType.Account)
+    if not ok or type(amount) ~= "number" or amount == self.db.warbandGold then
+        return false
+    end
+    self.db.warbandGold = amount
+    return true
+end
+
+function BT:GetWarbandGold()
+    return self.db.warbandGold or 0
 end
 
 
@@ -246,6 +254,7 @@ eventFrame:SetScript("OnEvent", function(self, event, ...)
         BT:CompactYesterdayGoldHistoryIfNewDay()
         BT:CompactOldGoldHistoryIfNewMonth()
         C_Timer.After(3, function()
+            BT:UpdateWarbandGoldRecord()
             BT:RecordGoldHistoryPoint()
             if BT.mainFrame and BT.mainFrame:IsShown() then BT.mainFrame.RefreshAll() end
         end)
@@ -253,6 +262,7 @@ eventFrame:SetScript("OnEvent", function(self, event, ...)
         print(string.format("|cff20d947Brutosaur Tracker|r v%s loaded and tracking %s.", BT.VERSION, BT:GetCharDisplayName()))
     elseif event == "PLAYER_ENTERING_WORLD" then
         BT:UpdateCharacterRecord()
+        BT:UpdateWarbandGoldRecord()
     elseif event == "PLAYER_LOGOUT" then
         BT:RecordGoldHistoryPoint()
         local guid = BT:GetCharGUID()
@@ -261,10 +271,13 @@ eventFrame:SetScript("OnEvent", function(self, event, ...)
             BT:GetCharDisplayName(), rec and tostring(rec.gold) or "?", tostring(guid)))
     elseif event == "PLAYER_MONEY" then
         BT:UpdateCharacterRecord()
+        BT:UpdateWarbandGoldRecord()
         BT:RecordGoldHistoryPoint()
         if BT.mainFrame and BT.mainFrame:IsShown() then BT.mainFrame.RefreshAll() end
     elseif event == "ACCOUNT_MONEY" then
-        BT:RecordGoldHistoryPoint()
-        if BT.mainFrame and BT.mainFrame:IsShown() then BT.mainFrame.RefreshAll() end
+        if BT:UpdateWarbandGoldRecord() then
+            BT:RecordGoldHistoryPoint()
+            if BT.mainFrame and BT.mainFrame:IsShown() then BT.mainFrame.RefreshAll() end
+        end
     end
 end)
