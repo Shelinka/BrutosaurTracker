@@ -6,6 +6,9 @@
 ## IconTexture: Interface\Icons\inv_brontosaurusmount
 ## SavedVariables: BrutosaurTrackerDB
 ## X-Curse-Project-Name: Brutosaur Tracker
+## X-Curse-Project-ID: 1686492
+
+
 
 Core.lua
 MoneyTracker.lua
