@@ -3,10 +3,6 @@ local ADDON_NAME, BT = ...
 BT.GUI = BT.GUI or {}
 local GUI = BT.GUI
 
-----------------------------------------------------------------------
--- Money formatting
-----------------------------------------------------------------------
-
 -- Compact "1,234g 56s 78c" style string with coin colors baked in via |c.
 function GUI.FormatMoney(copper)
     copper = math.floor(copper or 0)
@@ -34,7 +30,6 @@ function GUI.FormatMoneyShort(copper)
     return string.format("%s%d", sign, gold)
 end
 
--- Tab buttons
 
 
 function GUI.CreateTabButton(parent, text, onClick)
@@ -159,7 +154,7 @@ function GUI.NewGraph(parent, width, height)
     end
 
 
-    function graph:SetData(points, goalY, windowStart, windowEnd)
+    function graph:SetData(points, goalY, windowStart, windowEnd, days)
         self:Clear()
         if not points or #points == 0 then return end
 
@@ -169,9 +164,6 @@ function GUI.NewGraph(parent, width, height)
         local minX = windowStart or points[1].x
         local maxX = windowEnd or points[#points].x
         if maxX <= minX then maxX = minX + 86400 end
-
-        -- a single known value still draws a flat line across the window
-        -- instead of nothing
         if #points == 1 then
             points = { points[1], { x = maxX, y = points[1].y } }
         end
@@ -211,14 +203,15 @@ function GUI.NewGraph(parent, width, height)
 
         local spanSeconds = maxX - minX
         local dateFormat
-        if spanSeconds <= 1 * 86400 then
+        days = days or (spanSeconds / 86400)
+        if days <= 1 then
             dateFormat = "%H:%M"
-        elseif spanSeconds <= 10 * 86400 then
-            dateFormat = "%m/%d %Hh"
-        elseif spanSeconds <= 60 * 86400 then
-            dateFormat = "%m/%d"
-        elseif spanSeconds <= 200 * 86400 then
-            dateFormat = "%b %d"
+        elseif days <= 7 then
+            dateFormat = "%a"
+        elseif days <= 30 then
+            dateFormat = "%d %b"
+        elseif days <= 182 then
+            dateFormat = "%d %b"
         else
             dateFormat = "%b %Y"
         end

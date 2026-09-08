@@ -36,7 +36,6 @@ local function UpdatePosition()
     if isRoundInThisQuadrant then
         x, y = x * w, y * h
     else
-        -- square-edge quadrant: clamp to the corner instead of the circle
         local diagW, diagH = w * 1.41421356, h * 1.41421356
         x = math.max(-w, math.min(x * diagW, w))
         y = math.max(-h, math.min(y * diagH, h))

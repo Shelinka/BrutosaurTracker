@@ -13,7 +13,7 @@ function BT:CreateMainFrame()
     if self.mainFrame then return self.mainFrame end
 
     local frame = CreateFrame("Frame", "BrutosaurTrackerMainFrame", UIParent, "BasicFrameTemplateWithInset")
-    frame:SetSize(760, 480)
+    frame:SetSize(760, 486)
     frame:SetPoint("CENTER")
     frame:SetMovable(true)
     frame:EnableMouse(true)
@@ -24,14 +24,14 @@ function BT:CreateMainFrame()
     frame:SetFrameStrata("HIGH")
     tinsert(UISpecialFrames, "BrutosaurTrackerMainFrame")
 
-    local icon = frame:CreateTexture(nil, "ARTWORK")
-    icon:SetSize(24, 24)
-    icon:SetPoint("TOPLEFT", 8, -6)
+    local icon = frame:CreateTexture(nil, "ARTWORK", nil, 1)
+    icon:SetSize(16, 16)
+    icon:SetPoint("TOPLEFT", 8, -7)
     icon:SetTexture(self.ICON)
 
     frame.TitleText:ClearAllPoints()
-    frame.TitleText:SetPoint("LEFT", icon, "RIGHT", 6, 1)
-    frame.TitleText:SetText("Brutosaur Tracker")
+    frame.TitleText:SetPoint("LEFT", icon, "RIGHT", 6, 0)
+    frame.TitleText:SetText(string.format("Brutosaur Tracker %s", self.VERSION))
 
     -- tab bar
     local tabButtons = {}
@@ -61,14 +61,14 @@ function BT:CreateMainFrame()
         if prevBtn then
             btn:SetPoint("LEFT", prevBtn, "RIGHT", 4, 0)
         else
-            btn:SetPoint("TOPLEFT", 16, -32)
+            btn:SetPoint("TOPLEFT", 16, -38)
         end
         btn:SetScript("OnClick", function() SelectTab(t.key) end)
         tabButtons[t.key] = btn
         prevBtn = btn
 
         local panel = GUI[t.builder](frame)
-        panel:SetPoint("TOPLEFT", 12, -64)
+        panel:SetPoint("TOPLEFT", 12, -70)
         panel:SetPoint("BOTTOMRIGHT", -12, 12)
         panel:Hide()
         panels[t.key] = panel
@@ -84,6 +84,9 @@ function BT:CreateMainFrame()
     frame:SetScript("OnShow", function()
         SelectTab(lastTab or "graph")
     end)
+
+
+    frame:Hide()
 
     self.mainFrame = frame
     return frame

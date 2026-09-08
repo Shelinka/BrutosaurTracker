@@ -3,7 +3,9 @@ _G.BrutosaurTracker = BT
 
 BT.ADDON_NAME = ADDON_NAME
 BT.ICON = "Interface\\Icons\\inv_brontosaurusmount"
-BT.VERSION = "1.0.0"
+BT.VERSION = (C_AddOns and C_AddOns.GetAddOnMetadata and C_AddOns.GetAddOnMetadata(ADDON_NAME, "Version"))
+    or (GetAddOnMetadata and GetAddOnMetadata(ADDON_NAME, "Version"))
+    or "unknown"
 
 -- Category constants shared by MoneyTracker, ItemSales and the GUI.
 BT.CATEGORY = {

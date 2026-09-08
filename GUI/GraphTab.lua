@@ -53,7 +53,7 @@ function GUI.CreateGraphTab(parent)
         local points, windowStart, windowEnd = BT:GetGoldTimeSeries(days)
 
         local goal = BT:GetGoldGoal()
-        graph:SetData(points, goal > 0 and goal or nil, windowStart, windowEnd)
+        graph:SetData(points, goal > 0 and goal or nil, windowStart, windowEnd, days)
         emptyLabel:SetShown(#points == 0)
 
         dropdown:RefreshText()
