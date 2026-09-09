@@ -131,11 +131,7 @@ function GUI.NewGraph(parent, width, height)
         wipe(self.activeLabels)
     end
 
-    -- sublevel is pinned per role (gridlines below, data above) so a
-    -- reused pooled Line never ends up drawing in the wrong order just
-    -- because it served a different role in a previous render - that was
-    -- causing the data line to intermittently render underneath a
-    -- gridline wherever they were close together, looking like a gap.
+
     local function AddLine(self, x1, y1, x2, y2, thickness, r, g, b, a, sublevel)
         local line = GetOrCreateLine(self.linePool, self.area)
         line:SetDrawLayer("ARTWORK", sublevel or 0)
@@ -237,7 +233,14 @@ function GUI.NewGraph(parent, width, height)
         for _, p in ipairs(points) do
             local sx, sy = toScreen(p.x, p.y)
             if prevSx then
-                AddLine(self, prevSx, prevSy, sx, sy, 2.5, 0.2, 0.85, 0.3, 1, 2)
+                local dx, dy = sx - prevSx, sy - prevSy
+                local length = math.sqrt(dx * dx + dy * dy)
+                if length > 0 then
+                    local overlap = 1
+                    local offsetX = dx / length * overlap
+                    local offsetY = dy / length * overlap
+                    AddLine(self, prevSx - offsetX, prevSy - offsetY, sx + offsetX, sy + offsetY, 2.5, 0.2, 0.85, 0.3, 1, 2)
+                end
             end
             prevSx, prevSy = sx, sy
         end
