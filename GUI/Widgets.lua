@@ -131,8 +131,14 @@ function GUI.NewGraph(parent, width, height)
         wipe(self.activeLabels)
     end
 
-    local function AddLine(self, x1, y1, x2, y2, thickness, r, g, b, a)
+    -- sublevel is pinned per role (gridlines below, data above) so a
+    -- reused pooled Line never ends up drawing in the wrong order just
+    -- because it served a different role in a previous render - that was
+    -- causing the data line to intermittently render underneath a
+    -- gridline wherever they were close together, looking like a gap.
+    local function AddLine(self, x1, y1, x2, y2, thickness, r, g, b, a, sublevel)
         local line = GetOrCreateLine(self.linePool, self.area)
+        line:SetDrawLayer("ARTWORK", sublevel or 0)
         line:ClearAllPoints()
         line:SetThickness(thickness)
         line:SetColorTexture(r, g, b, a or 1)
@@ -196,7 +202,7 @@ function GUI.NewGraph(parent, width, height)
         for i = 0, NUM_Y_TICKS do
             local val = minY + (maxY - minY) * (i / NUM_Y_TICKS)
             local _, sy = toScreen(minX, val)
-            AddLine(self, PAD_LEFT, sy, w - PAD_RIGHT, sy, 1, 1, 1, 1, i == 0 and 0.25 or 0.08)
+            AddLine(self, PAD_LEFT, sy, w - PAD_RIGHT, sy, 1, 1, 1, 1, i == 0 and 0.25 or 0.08, 0)
             AddLabel(self, PAD_LEFT - 6, sy - 6, "BOTTOMRIGHT", GUI.FormatMoneyShort(val) .. "g")
         end
 
@@ -223,7 +229,7 @@ function GUI.NewGraph(parent, width, height)
 
         if goalY then
             local _, gy = toScreen(minX, goalY)
-            AddLine(self, PAD_LEFT, gy, w - PAD_RIGHT, gy, 1.5, 1, 0.82, 0, 0.8)
+            AddLine(self, PAD_LEFT, gy, w - PAD_RIGHT, gy, 1.5, 1, 0.82, 0, 0.8, 1)
         end
 
 
@@ -231,7 +237,7 @@ function GUI.NewGraph(parent, width, height)
         for _, p in ipairs(points) do
             local sx, sy = toScreen(p.x, p.y)
             if prevSx then
-                AddLine(self, prevSx, prevSy, sx, sy, 2.5, 0.2, 0.85, 0.3, 1)
+                AddLine(self, prevSx, prevSy, sx, sy, 2.5, 0.2, 0.85, 0.3, 1, 2)
             end
             prevSx, prevSy = sx, sy
         end

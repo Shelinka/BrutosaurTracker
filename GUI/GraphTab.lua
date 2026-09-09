@@ -47,7 +47,7 @@ function GUI.CreateGraphTab(parent)
         subLabel:SetText(string.format("%d character%s tracked + live warband bank  (see the Characters tab for a breakdown)",
             charCount, charCount == 1 and "" or "s"))
 
-        sinceLabel:SetText("Tracking since " .. date("%b %d, %Y", BT:GetTrackingSinceDate()))
+        sinceLabel:SetText("Tracking since " .. date("%d %b, %Y", BT:GetTrackingSinceDate()))
 
         local days = BT.db.settings.graphRangeDays or 7
         local points, windowStart, windowEnd = BT:GetGoldTimeSeries(days)
