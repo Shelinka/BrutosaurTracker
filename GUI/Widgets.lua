@@ -229,6 +229,7 @@ function GUI.NewGraph(parent, width, height)
         end
 
 
+        local lr, lg, lb = BT:GetGraphLineColor()
         local prevSx, prevSy
         for _, p in ipairs(points) do
             local sx, sy = toScreen(p.x, p.y)
@@ -239,7 +240,7 @@ function GUI.NewGraph(parent, width, height)
                     local overlap = 1
                     local offsetX = dx / length * overlap
                     local offsetY = dy / length * overlap
-                    AddLine(self, prevSx - offsetX, prevSy - offsetY, sx + offsetX, sy + offsetY, 2.5, 0.2, 0.85, 0.3, 1, 2)
+                    AddLine(self, prevSx - offsetX, prevSy - offsetY, sx + offsetX, sy + offsetY, 2.5, lr, lg, lb, 1, 2)
                 end
             end
             prevSx, prevSy = sx, sy

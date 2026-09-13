@@ -54,6 +54,8 @@ local function GetDefaults()
             minimap = { hide = false, minimapPos = 220 },
             lastHistoryCompactMonth = nil,
             lastHistoryDayCompact = nil,
+            graphColor = { r = 0.2, g = 0.85, b = 0.3 },
+            graphColorMode = "custom",
         },
 
         warbandGold = 0,

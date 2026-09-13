@@ -5,7 +5,7 @@ local TABS = {
     { key = "graph", label = "Gold History", builder = "CreateGraphTab" },
     { key = "ledger", label = "Income / Spending", builder = "CreateLedgerTab" },
     { key = "sales", label = "Item Sales", builder = "CreateItemSalesTab" },
-    { key = "goal", label = "Gold Goal", builder = "CreateGoalTab" },
+    { key = "settings", label = "Settings", builder = "CreateSettingsTab" },
     { key = "characters", label = "Characters", builder = "CreateCharactersTab" },
 }
 

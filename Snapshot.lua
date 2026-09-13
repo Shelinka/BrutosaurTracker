@@ -127,6 +127,22 @@ function BT:GetTrackingSinceDate()
     return earliest or time()
 end
 
+function BT:GetGraphLineColor()
+    if self.db.settings.graphColorMode == "class" then
+        local _, classFile = UnitClass("player")
+        if classFile then
+            if C_ClassColor and C_ClassColor.GetClassColor then
+                local color = C_ClassColor.GetClassColor(classFile)
+                if color then return color:GetRGB() end
+            end
+            local rc = RAID_CLASS_COLORS and RAID_CLASS_COLORS[classFile]
+            if rc then return rc.r, rc.g, rc.b end
+        end
+    end
+    local c = self.db.settings.graphColor or { r = 0.2, g = 0.85, b = 0.3 }
+    return c.r, c.g, c.b
+end
+
 function BT:GetGoldGoal()
     return self.db.settings.goldGoal or 0
 end
