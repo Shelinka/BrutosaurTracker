@@ -54,7 +54,6 @@ function BT:CompactYesterdayGoldHistoryIfNewDay()
     self.db.history = compacted
 end
 
-
 function BT:CompactOldGoldHistoryIfNewMonth()
     local currentMonthKey = date("%Y%m")
     if self.db.settings.lastHistoryCompactMonth == currentMonthKey then
@@ -115,7 +114,6 @@ function BT:GetGoldTimeSeries(days)
 
     return points, windowStart, windowEnd
 end
-
 
 function BT:GetTrackingSinceDate()
     local earliest = nil

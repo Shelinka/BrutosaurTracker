@@ -33,7 +33,6 @@ function BT:CreateMainFrame()
     frame.TitleText:SetPoint("LEFT", icon, "RIGHT", 6, 0)
     frame.TitleText:SetText(string.format("Brutosaur Tracker %s", self.VERSION))
 
-    -- tab bar
     local tabButtons = {}
     local panels = {}
     local lastTab
