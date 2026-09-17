@@ -8,6 +8,8 @@ MT.lastMoney = nil
 MT.windowContext = nil
 MT.oneShotContext = nil
 MT.oneShotExpireTimer = nil
+MT.suppressNext = nil
+MT.suppressExpireTimer = nil
 
 function BT:RecordLedgerEntry(category, deltaCopper)
     if deltaCopper == 0 then return end
@@ -26,15 +28,12 @@ function BT:RecordLedgerEntry(category, deltaCopper)
     end
 end
 
-
-
 local windowGeneration = 0
 
 local function SetWindowContext(cat)
     windowGeneration = windowGeneration + 1
     MT.windowContext = cat
 end
-
 
 local function ClearWindowContext(cat)
     local gen = windowGeneration
@@ -56,7 +55,16 @@ local function SetOneShotContext(cat)
     end)
 end
 
-
+local function SetSuppressNextDelta()
+    MT.suppressNext = true
+    if MT.suppressExpireTimer then
+        MT.suppressExpireTimer:Cancel()
+    end
+    MT.suppressExpireTimer = C_Timer.NewTimer(5, function()
+        MT.suppressNext = nil
+        MT.suppressExpireTimer = nil
+    end)
+end
 
 local function HandleMoneyChanged()
     local newMoney = GetMoney()
@@ -67,6 +75,15 @@ local function HandleMoneyChanged()
     local delta = newMoney - MT.lastMoney
     MT.lastMoney = newMoney
     if delta == 0 then return end
+
+    if MT.suppressNext then
+        MT.suppressNext = nil
+        if MT.suppressExpireTimer then
+            MT.suppressExpireTimer:Cancel()
+            MT.suppressExpireTimer = nil
+        end
+        return
+    end
 
     local category = MT.oneShotContext or MT.windowContext or CAT.OTHER
     BT:RecordLedgerEntry(category, delta)
@@ -79,7 +96,6 @@ local function HandleMoneyChanged()
         end
     end
 end
-
 
 local f = CreateFrame("Frame")
 MT.frame = f
@@ -100,12 +116,51 @@ local WATCHED_EVENTS = {
     "ITEM_PURCHASED",
     "COMMODITY_PURCHASE_SUCCEEDED",
     "AUCTION_HOUSE_SHOW", "AUCTION_HOUSE_CLOSED",
+
+    "BLACK_MARKET_WON",
 }
 
 for _, evt in ipairs(WATCHED_EVENTS) do
     local ok = pcall(f.RegisterEvent, f, evt)
     if not ok then
     end
+end
+
+local function PruneOldPendingBids()
+    local cutoff = time() - 3 * 86400
+    local pending = BT.db.blackMarketPendingBids
+    for i = #pending, 1, -1 do
+        if pending[i].t < cutoff then
+            table.remove(pending, i)
+        end
+    end
+end
+
+local function RecordPendingBid(marketID, amount)
+    table.insert(BT.db.blackMarketPendingBids, { marketID = marketID, amount = amount, t = time() })
+    PruneOldPendingBids()
+end
+
+local function ConsumePendingBidByAmount(amount)
+    local pending = BT.db.blackMarketPendingBids
+    for i, entry in ipairs(pending) do
+        if entry.amount == amount then
+            table.remove(pending, i)
+            return true
+        end
+    end
+    return false
+end
+
+local function ConsumePendingBidByMarketID(marketID)
+    local pending = BT.db.blackMarketPendingBids
+    for i, entry in ipairs(pending) do
+        if entry.marketID == marketID then
+            table.remove(pending, i)
+            return true
+        end
+    end
+    return false
 end
 
 f:SetScript("OnEvent", function(self, event, ...)
@@ -156,6 +211,12 @@ f:SetScript("OnEvent", function(self, event, ...)
         SetWindowContext(CAT.AUCTIONS)
     elseif event == "AUCTION_HOUSE_CLOSED" then
         ClearWindowContext(CAT.AUCTIONS)
+
+    elseif event == "BLACK_MARKET_WON" then
+        local marketID = ...
+        if marketID then
+            ConsumePendingBidByMarketID(marketID)
+        end
     end
 end)
 
@@ -200,6 +261,30 @@ if C_AuctionHouse and C_AuctionHouse.StartCommoditiesPurchase then
     end)
 end
 
+if C_BlackMarket and C_BlackMarket.ItemPlaceBid then
+    hooksecurefunc(C_BlackMarket, "ItemPlaceBid", function(marketID, bid)
+        SetOneShotContext(CAT.BLACKMARKET)
+        if marketID and bid then
+            RecordPendingBid(marketID, bid)
+        end
+    end)
+end
+
+if C_Bank and C_Bank.DepositMoney and Enum and Enum.BankType then
+    hooksecurefunc(C_Bank, "DepositMoney", function(bankType)
+        if bankType == Enum.BankType.Account then
+            SetSuppressNextDelta()
+        end
+    end)
+end
+if C_Bank and C_Bank.WithdrawMoney and Enum and Enum.BankType then
+    hooksecurefunc(C_Bank, "WithdrawMoney", function(bankType)
+        if bankType == Enum.BankType.Account then
+            SetSuppressNextDelta()
+        end
+    end)
+end
+
 local function IsAuctionHouseSender(sender)
     if not sender then return false end
     if AUCTION_HOUSE_MAILBOX_SENDER and sender == AUCTION_HOUSE_MAILBOX_SENDER then
@@ -208,10 +293,29 @@ local function IsAuctionHouseSender(sender)
     return sender == "Auction House"
 end
 
+local function LooksLikeBlackMarketSender(sender)
+    if not sender then return false end
+    return sender:find("Black Market", 1, true) ~= nil
+end
+
 local function TagMailMoneyContext(mailIndex)
-    local sender = select(3, GetInboxHeaderInfo(mailIndex))
+    local _, _, sender, subject, moneyAmount = GetInboxHeaderInfo(mailIndex)
+
     if IsAuctionHouseSender(sender) then
         SetOneShotContext(CAT.AUCTIONS)
+        return
+    end
+
+    if LooksLikeBlackMarketSender(sender) then
+        SetOneShotContext(CAT.BLACKMARKET)
+        if moneyAmount then
+            ConsumePendingBidByAmount(moneyAmount)
+        end
+        return
+    end
+
+    if moneyAmount and moneyAmount > 0 and ConsumePendingBidByAmount(moneyAmount) then
+        SetOneShotContext(CAT.BLACKMARKET)
     end
 end
 

@@ -1,2 +1,6 @@
 /logic
 /history
+/Libs/LibStub
+/Libs/CallbackHandler-1.0
+/Libs/LibDataBroker-1.1
+/Libs/LibDBIcon-1.0

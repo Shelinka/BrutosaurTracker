@@ -24,7 +24,6 @@ function GUI.CreateSettingsTab(parent)
     title:SetPoint("TOPLEFT", 16, -16)
     title:SetText("Settings")
 
-
     local goalHeader = panel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     goalHeader:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -18)
     goalHeader:SetText("Gold Goal")
@@ -79,7 +78,6 @@ function GUI.CreateSettingsTab(parent)
 
     local barText = barBG:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     barText:SetPoint("CENTER")
-
 
     local colorHeader = panel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     colorHeader:SetPoint("TOPLEFT", progressBox, "BOTTOMLEFT", 4, -20)

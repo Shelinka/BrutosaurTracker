@@ -91,7 +91,6 @@ function BT:CompactOldGoldHistoryIfNewMonth()
     self.db.history = compacted
 end
 
-
 function BT:GetGoldTimeSeries(days)
     local windowEnd = time()
     local windowStart = windowEnd - days * 86400
@@ -115,7 +114,6 @@ function BT:GetGoldTimeSeries(days)
 
     return points, windowStart, windowEnd
 end
-
 
 function BT:GetTrackingSinceDate()
     local earliest = nil

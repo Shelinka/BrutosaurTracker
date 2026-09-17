@@ -7,7 +7,6 @@ BT.VERSION = (C_AddOns and C_AddOns.GetAddOnMetadata and C_AddOns.GetAddOnMetada
     or (GetAddOnMetadata and GetAddOnMetadata(ADDON_NAME, "Version"))
     or "unknown"
 
--- Category constants shared by MoneyTracker, ItemSales and the GUI.
 BT.CATEGORY = {
     TAXI        = "TAXI",
     GUILD       = "GUILD",
@@ -21,10 +20,11 @@ BT.CATEGORY = {
     TRAINING    = "TRAINING",
     AUCTIONS    = "AUCTIONS",
     MERCHANTS   = "MERCHANTS",
+    BLACKMARKET = "BLACKMARKET",
 }
 
 BT.CATEGORY_ORDER = {
-    "AUCTIONS", "GUILD", "LOOT", "MAIL", "MERCHANTS", "OTHER",
+    "AUCTIONS", "BLACKMARKET", "GUILD", "LOOT", "MAIL", "MERCHANTS", "OTHER",
     "QUESTS", "REPAIR", "TAXI", "TRADE", "TRAINING", "TRANSMOG",
 }
 
@@ -41,8 +41,8 @@ BT.CATEGORY_LABEL = {
     TRAINING    = "Training Costs",
     AUCTIONS    = "Auctions",
     MERCHANTS   = "Merchants",
+    BLACKMARKET = "Black Market",
 }
-
 
 local function GetDefaults()
     return {
@@ -69,6 +69,8 @@ local function GetDefaults()
         itemSales = {},
 
         itemIconCache = {},
+
+        blackMarketPendingBids = {},
     }
 end
 
@@ -173,7 +175,6 @@ function BT:GetCharacterBreakdown()
     return list
 end
 
-
 function BT:UpdateWarbandGoldRecord()
     if not (C_Bank and C_Bank.FetchDepositedMoney and Enum and Enum.BankType) then
         return false
@@ -190,7 +191,6 @@ function BT:GetWarbandGold()
     return self.db.warbandGold or 0
 end
 
-
 function BT:GetTotalGold()
     local total = 0
     for _, entry in ipairs(self:GetCharacterBreakdown()) do
@@ -199,8 +199,6 @@ function BT:GetTotalGold()
     total = total + self:GetWarbandGold()
     return total
 end
-
-
 
 function BT:DayKey(t)
     return date("%Y%m%d", t or time())
@@ -212,8 +210,6 @@ function BT:DayKeyToDate(key)
     local d = tonumber(key:sub(7, 8))
     return time({ year = y, month = m, day = d, hour = 12 })
 end
-
-
 
 SLASH_BRUTOSAURTRACKER1 = "/brutosaur"
 SLASH_BRUTOSAURTRACKER2 = "/bt"
@@ -235,7 +231,6 @@ SlashCmdList["BRUTOSAURTRACKER"] = function(msg)
         BT:ToggleMainFrame()
     end
 end
-
 
 local eventFrame = CreateFrame("Frame")
 BT.eventFrame = eventFrame

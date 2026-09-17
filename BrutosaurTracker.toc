@@ -2,13 +2,15 @@
 ## Title: Brutosaur Tracker
 ## Notes: Reins of the Mighty Caravan Brutosaur will be yours one day, right?
 ## Author: Shelinka
-## Version: 1.0.21
+## Version: 1.0.23
 ## IconTexture: Interface\Icons\inv_brontosaurusmount
 ## SavedVariables: BrutosaurTrackerDB
 ## X-Curse-Project-Name: Brutosaur Tracker
 ## X-Curse-Project-ID: 1686492
 
 
+
+Libs\embeds.xml
 
 Core.lua
 MoneyTracker.lua
