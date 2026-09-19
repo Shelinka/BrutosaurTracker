@@ -4,26 +4,24 @@ local GUI = BT.GUI
 local ROW_HEIGHT = 22
 
 StaticPopupDialogs["BRUTOSAURTRACKER_RESET_LEDGER"] = {
-    text = "This will permanently delete all Income / Spending history.\nType Delete below to confirm.",
+    text = "This will permanently delete all Income / Spending history.\nType DELETE below to confirm.",
     button1 = OKAY,
     button2 = CANCEL,
     hasEditBox = true,
     maxLetters = 20,
+    enterClicksFirstButton = true,
     OnShow = function(self)
-        self.editBox:SetText("")
-        self.editBox:SetFocus()
+        self.EditBox:SetText("")
+        self.EditBox:SetFocus()
     end,
     OnAccept = function(self)
-        local typed = self.editBox and self.editBox:GetText() or ""
+        local typed = self.EditBox and self.EditBox:GetText() or ""
         if typed == "Delete" then
             BT:ResetLedger()
             if BT.mainFrame and BT.mainFrame.RefreshAll then BT.mainFrame.RefreshAll() end
         else
             print("|cffff4040Brutosaur Tracker|r Reset cancelled - you must type \"Delete\" exactly.")
         end
-    end,
-    EditBoxOnEnterPressed = function(self)
-        self:GetParent().button1:Click()
     end,
     timeout = 0,
     whileDead = true,
