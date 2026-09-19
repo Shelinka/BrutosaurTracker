@@ -56,6 +56,7 @@ local function GetDefaults()
             lastHistoryDayCompact = nil,
             graphColor = { r = 0.2, g = 0.85, b = 0.3 },
             graphColorMode = "custom",
+            SetLedgerTabOnlyGold = false,
         },
 
         warbandGold = 0,
@@ -158,6 +159,12 @@ end
 
 function BT:DeleteCharacter(guid)
     self.db.characters[guid] = nil
+end
+
+-- Wipes all Income/Spending history (db.ledger). Does not touch gold
+-- totals, item sales, or gold history - only the category breakdown.
+function BT:ResetLedger()
+    self.db.ledger = {}
 end
 
 function BT:GetCharacterBreakdown()

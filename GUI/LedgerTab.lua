@@ -3,11 +3,61 @@ local GUI = BT.GUI
 
 local ROW_HEIGHT = 22
 
+StaticPopupDialogs["BRUTOSAURTRACKER_RESET_LEDGER"] = {
+    text = "This will permanently delete all Income / Spending history.\nType Delete below to confirm.",
+    button1 = OKAY,
+    button2 = CANCEL,
+    hasEditBox = true,
+    maxLetters = 20,
+    OnShow = function(self)
+        self.editBox:SetText("")
+        self.editBox:SetFocus()
+    end,
+    OnAccept = function(self)
+        local typed = self.editBox and self.editBox:GetText() or ""
+        if typed == "Delete" then
+            BT:ResetLedger()
+            if BT.mainFrame and BT.mainFrame.RefreshAll then BT.mainFrame.RefreshAll() end
+        else
+            print("|cffff4040Brutosaur Tracker|r Reset cancelled - you must type \"Delete\" exactly.")
+        end
+    end,
+    EditBoxOnEnterPressed = function(self)
+        self:GetParent().button1:Click()
+    end,
+    timeout = 0,
+    whileDead = true,
+    hideOnEscape = true,
+    preferredIndex = 3,
+}
+
 function GUI.CreateLedgerTab(parent)
     local panel = CreateFrame("Frame", nil, parent)
     panel:SetAllPoints()
 
     local dropdown
+
+    local resetBtn = GUI.CreateTabButton(panel, "Reset", function()
+        StaticPopup_Show("BRUTOSAURTRACKER_RESET_LEDGER")
+    end)
+    resetBtn:SetSize(90, 24)
+    resetBtn:SetPoint("TOPRIGHT", -4, -8)
+
+    dropdown = GUI.CreateSharedRangeDropdown(panel, function() panel.Refresh() end)
+    dropdown:SetPoint("RIGHT", resetBtn, "LEFT", -4, 0)
+
+    local onlyGoldCheck = CreateFrame("CheckButton", nil, panel, "UICheckButtonTemplate")
+    onlyGoldCheck:SetSize(22, 22)
+    onlyGoldCheck:SetPoint("TOPLEFT", 12, -10)
+
+    local onlyGoldLabel = panel:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    onlyGoldLabel:SetPoint("LEFT", onlyGoldCheck, "RIGHT", 2, 0)
+    onlyGoldLabel:SetText("Only show gold (hide silver/copper)")
+
+    onlyGoldCheck:SetScript("OnClick", function(self)
+        BT.db.settings.SetLedgerTabOnlyGold = self:GetChecked() and true or false
+        panel.Refresh()
+    end)
 
     local header = CreateFrame("Frame", nil, panel)
     header:SetPoint("TOPLEFT", 16, -46)
@@ -29,10 +79,10 @@ function GUI.CreateLedgerTab(parent)
     hOutgoing:SetText("Outgoing")
     hOutgoing:SetTextColor(1, 0.82, 0)
 
-        local hNet = header:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-        hNet:SetPoint("LEFT", header, "LEFT", 600, 0)
-        hNet:SetText("Net")
-        hNet:SetTextColor(1, 0.82, 0)
+    local hNet = header:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    hNet:SetPoint("LEFT", header, "LEFT", 600, 0)
+    hNet:SetText("Net")
+    hNet:SetTextColor(1, 0.82, 0)
 
     local rows = {}
     local rowsContainer = CreateFrame("Frame", nil, panel)
@@ -65,11 +115,11 @@ function GUI.CreateLedgerTab(parent)
         outFS:SetPoint("LEFT", row, "LEFT", 460, 0)
         outFS:SetJustifyH("LEFT")
 
-            local netFS = row:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-            netFS:SetPoint("LEFT", row, "LEFT", 600, 0)
-            netFS:SetJustifyH("LEFT")
+        local netFS = row:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+        netFS:SetPoint("LEFT", row, "LEFT", 600, 0)
+        netFS:SetJustifyH("LEFT")
 
-            rows[catKey] = { frame = row, incoming = inFS, outgoing = outFS, net = netFS }
+        rows[catKey] = { frame = row, incoming = inFS, outgoing = outFS, net = netFS }
     end
     rowsContainer:SetHeight(#BT.CATEGORY_ORDER * ROW_HEIGHT)
 
@@ -93,10 +143,13 @@ function GUI.CreateLedgerTab(parent)
     local totalOut = totalRow:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     totalOut:SetPoint("LEFT", totalRow, "LEFT", 460, 0)
 
-        local totalNet = totalRow:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-        totalNet:SetPoint("LEFT", totalRow, "LEFT", 600, 0)
+    local totalNet = totalRow:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    totalNet:SetPoint("LEFT", totalRow, "LEFT", 600, 0)
 
     local function Refresh()
+        onlyGoldCheck:SetChecked(BT.db.settings.SetLedgerTabOnlyGold and true or false)
+        local goldOnly = BT.db.settings.SetLedgerTabOnlyGold
+
         local days = BT.db.settings.graphRangeDays or 7
         local sums = {}
         for _, catKey in ipairs(BT.CATEGORY_ORDER) do
@@ -121,20 +174,17 @@ function GUI.CreateLedgerTab(parent)
         for _, catKey in ipairs(BT.CATEGORY_ORDER) do
             local s = sums[catKey]
             local row = rows[catKey]
-            row.incoming:SetText(s.incoming > 0 and GUI.FormatMoney(s.incoming) or "-")
-            row.outgoing:SetText(s.outgoing > 0 and GUI.FormatMoney(s.outgoing) or "-")
-                row.net:SetText(GUI.FormatMoney(s.incoming - s.outgoing))
+            row.incoming:SetText(s.incoming > 0 and GUI.FormatMoney(s.incoming, goldOnly) or "-")
+            row.outgoing:SetText(s.outgoing > 0 and GUI.FormatMoney(s.outgoing, goldOnly) or "-")
+            row.net:SetText(GUI.FormatMoney(s.incoming - s.outgoing, goldOnly))
             totalIncoming = totalIncoming + s.incoming
             totalOutgoing = totalOutgoing + s.outgoing
         end
-        totalIn:SetText(GUI.FormatMoney(totalIncoming))
-        totalOut:SetText(GUI.FormatMoney(totalOutgoing))
-            totalNet:SetText(GUI.FormatMoney(totalIncoming - totalOutgoing))
+        totalIn:SetText(GUI.FormatMoney(totalIncoming, goldOnly))
+        totalOut:SetText(GUI.FormatMoney(totalOutgoing, goldOnly))
+        totalNet:SetText(GUI.FormatMoney(totalIncoming - totalOutgoing, goldOnly))
     end
     panel.Refresh = Refresh
-
-    dropdown = GUI.CreateSharedRangeDropdown(panel, Refresh)
-    dropdown:SetPoint("TOPRIGHT", -4, -8)
 
     panel:SetScript("OnShow", Refresh)
     return panel

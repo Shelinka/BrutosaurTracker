@@ -166,8 +166,6 @@ function GUI.CreateSettingsTab(parent)
         if BT.mainFrame and BT.mainFrame.RefreshAll then BT.mainFrame.RefreshAll() end
     end)
 
-    ------------------------------------------------------------------
-
     local function Refresh()
         local goal, current, remaining = BT:GetGoalProgress()
         goalLine:SetText("Goal: " .. GUI.FormatMoney(goal))

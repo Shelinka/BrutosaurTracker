@@ -4,7 +4,7 @@ BT.GUI = BT.GUI or {}
 local GUI = BT.GUI
 
 -- Compact "1,234g 56s 78c" style string with coin colors baked in via |c.
-function GUI.FormatMoney(copper)
+function GUI.FormatMoney(copper, goldOnly)
     copper = math.floor(copper or 0)
     local negative = copper < 0
     copper = math.abs(copper)
@@ -14,7 +14,12 @@ function GUI.FormatMoney(copper)
     local bronze = copper % 100
 
     local goldStr = string.format("|cffffd700%s|r", BreakUpLargeNumbers and BreakUpLargeNumbers(gold) or tostring(gold))
-    local str = string.format("%sg |cffc7c7cf%ds|r |cffb87333%dc|r", goldStr, silver, bronze)
+    local str
+    if goldOnly then
+        str = string.format("%sg", goldStr)
+    else
+        str = string.format("%sg |cffc7c7cf%ds|r |cffb87333%dc|r", goldStr, silver, bronze)
+    end
     if negative then str = "-" .. str end
     return str
 end

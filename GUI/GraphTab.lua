@@ -39,8 +39,13 @@ function GUI.CreateGraphTab(parent)
     emptyLabel:Hide()
 
     local function Refresh()
-        local total = BT:GetTotalGold()
-        totalLabel:SetText("Total Gold: " .. GUI.FormatMoney(total))
+        local charactersTotal = 0
+        for _, entry in ipairs(BT:GetCharacterBreakdown()) do
+            charactersTotal = charactersTotal + entry.gold
+        end
+        local warbandTotal = BT:GetWarbandGold()
+        totalLabel:SetText(string.format("Total Gold: %s | %s",
+            GUI.FormatMoney(charactersTotal), GUI.FormatMoney(warbandTotal)))
 
         local charCount = 0
         for _ in pairs(BT.db.characters) do charCount = charCount + 1 end
