@@ -87,6 +87,23 @@ function BT:CreateMainFrame()
 
     frame:Hide()
 
+    local combatFrame = CreateFrame("Frame")
+    combatFrame:RegisterEvent("PLAYER_REGEN_DISABLED")
+    combatFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
+    combatFrame:SetScript("OnEvent", function(_, event)
+        if event == "PLAYER_REGEN_DISABLED" then
+            if frame:IsShown() then
+                frame.closedForCombat = true
+                frame:Hide()
+            end
+        elseif event == "PLAYER_REGEN_ENABLED" then
+            if frame.closedForCombat then
+                frame.closedForCombat = nil
+                frame:Show()
+            end
+        end
+    end)
+
     self.mainFrame = frame
     return frame
 end
@@ -96,6 +113,10 @@ function BT:ToggleMainFrame()
     if frame:IsShown() then
         frame:Hide()
     else
+        if InCombatLockdown() then
+            print("|cffff4040Brutosaur Tracker|r cannot be opened while in combat.")
+            return
+        end
         frame:Show()
     end
 end

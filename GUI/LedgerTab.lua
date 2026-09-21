@@ -127,22 +127,19 @@ function GUI.CreateLedgerTab(parent)
     sep:SetPoint("TOPLEFT", rowsContainer, "BOTTOMLEFT", 4, -4)
     sep:SetPoint("TOPRIGHT", rowsContainer, "BOTTOMRIGHT", -4, -4)
 
-    local totalRow = CreateFrame("Frame", nil, panel)
-    totalRow:SetPoint("TOPLEFT", sep, "BOTTOMLEFT", -4, -6)
-    totalRow:SetHeight(ROW_HEIGHT)
+    local grandTotalBox = CreateFrame("Frame", nil, panel, "BackdropTemplate")
+    grandTotalBox:SetSize(220, 30)
+    grandTotalBox:SetPoint("BOTTOMRIGHT", panel, "BOTTOMRIGHT", -4, 4)
+    grandTotalBox:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8x8",
+        edgeFile = "Interface\\Buttons\\WHITE8x8",
+        edgeSize = 1,
+    })
+    grandTotalBox:SetBackdropColor(1, 1, 1, 0.06)
+    grandTotalBox:SetBackdropBorderColor(1, 0.82, 0, 0.6)
 
-    local totalName = totalRow:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    totalName:SetPoint("LEFT", 4, 0)
-    totalName:SetText("Net Total")
-
-    local totalIn = totalRow:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    totalIn:SetPoint("LEFT", totalRow, "LEFT", 260, 0)
-
-    local totalOut = totalRow:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    totalOut:SetPoint("LEFT", totalRow, "LEFT", 460, 0)
-
-    local totalNet = totalRow:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    totalNet:SetPoint("LEFT", totalRow, "LEFT", 600, 0)
+    local grandTotalText = grandTotalBox:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    grandTotalText:SetPoint("CENTER")
 
     local function Refresh()
         onlyGoldCheck:SetChecked(BT.db.settings.SetLedgerTabOnlyGold and true or false)
@@ -178,9 +175,15 @@ function GUI.CreateLedgerTab(parent)
             totalIncoming = totalIncoming + s.incoming
             totalOutgoing = totalOutgoing + s.outgoing
         end
-        totalIn:SetText(GUI.FormatMoney(totalIncoming, goldOnly))
-        totalOut:SetText(GUI.FormatMoney(totalOutgoing, goldOnly))
-        totalNet:SetText(GUI.FormatMoney(totalIncoming - totalOutgoing, goldOnly))
+        local totalNet = totalIncoming - totalOutgoing
+        grandTotalText:SetText(string.format("Net Total: %s", GUI.FormatMoney(totalNet, goldOnly)))
+        if totalNet > 0 then
+            grandTotalBox:SetBackdropBorderColor(0.2, 1, 0.2, 0.8)
+        elseif totalNet < 0 then
+            grandTotalBox:SetBackdropBorderColor(1, 0.2, 0.2, 0.8)
+        else
+            grandTotalBox:SetBackdropBorderColor(1, 0.82, 0, 0.6)
+        end
     end
     panel.Refresh = Refresh
 
