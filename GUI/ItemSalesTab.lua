@@ -13,7 +13,7 @@ local VISIBLE_ROWS = 9
 
 local function BuildHeaderText(label, columnKey, sortState)
     if sortState.key == columnKey then
-        return label .. (sortState.dir == 1 and "  |cffffd700^|r" or "  |cffffd700v|r")
+        return label .. (sortState.dir == 1 and "  |cffffd700^|r" or "  |cffffd700∨|r")
     end
     return label
 end
