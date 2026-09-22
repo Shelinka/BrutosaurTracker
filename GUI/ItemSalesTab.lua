@@ -11,13 +11,6 @@ local SORT_COLUMNS = {
 local ROW_HEIGHT = 36
 local VISIBLE_ROWS = 9
 
-local function BuildHeaderText(label, columnKey, sortState)
-    if sortState.key == columnKey then
-        return label .. (sortState.dir == 1 and "  |cffffd700^|r" or "  |cffffd700∨|r")
-    end
-    return label
-end
-
 function GUI.CreateItemSalesTab(parent)
     local panel = CreateFrame("Frame", nil, parent)
     panel:SetAllPoints()
@@ -110,7 +103,9 @@ function GUI.CreateItemSalesTab(parent)
         end)
 
         for _, col in ipairs(SORT_COLUMNS) do
-            headerButtons[col.key]:SetText(BuildHeaderText(col.label, col.key, sortState))
+            local button = headerButtons[col.key]
+            button:SetText(col.label)
+            button:SetSortIndicator(sortState.key == col.key and sortState.dir or nil)
         end
 
         emptyLabel:SetShown(#currentList == 0)
@@ -162,6 +157,21 @@ function GUI.CreateItemSalesTab(parent)
         fs:SetTextColor(1, 0.82, 0)
         btn.text = fs
         btn.SetText = function(_, text) fs:SetText(text) end
+
+        local indicator = btn:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        indicator:SetPoint("LEFT", fs, "RIGHT", 4, 0)
+        indicator:SetWidth(16)
+        indicator:SetJustifyH("LEFT")
+        indicator:SetTextColor(1, 0.82, 0)
+        btn.SetSortIndicator = function(_, direction)
+            if direction then
+                indicator:SetText(direction == 1 and "/\\" or "\\/")
+                indicator:Show()
+            else
+                indicator:Hide()
+            end
+        end
+        indicator:Hide()
 
         btn:SetScript("OnClick", function()
             if sortState.key == col.key then
