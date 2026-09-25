@@ -93,7 +93,7 @@ end
 
 function BT:GetGoldTimeSeries(days)
     local windowEnd = time()
-    local windowStart = windowEnd - days * 86400
+    local windowStart = days >= 3650 and self:GetTrackingSinceDate() or windowEnd - days * 86400
 
     local points = {}
     local lastBefore = nil
