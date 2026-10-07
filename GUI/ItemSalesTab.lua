@@ -138,6 +138,7 @@ function GUI.CreateItemSalesTab(parent)
     end
 
     local function Refresh()
+        dropdown:RefreshText()
         local days = BT.db.settings.graphRangeDays or 7
         fullList = BT:GetItemSalesSummary(days)
         RefreshRows()

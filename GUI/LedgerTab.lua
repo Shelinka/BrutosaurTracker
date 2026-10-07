@@ -142,6 +142,7 @@ function GUI.CreateLedgerTab(parent)
     grandTotalText:SetPoint("CENTER")
 
     local function Refresh()
+        dropdown:RefreshText()
         onlyGoldCheck:SetChecked(BT.db.settings.SetLedgerTabOnlyGold and true or false)
         local goldOnly = BT.db.settings.SetLedgerTabOnlyGold
 

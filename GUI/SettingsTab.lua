@@ -166,7 +166,25 @@ function GUI.CreateSettingsTab(parent)
         if BT.mainFrame and BT.mainFrame.RefreshAll then BT.mainFrame.RefreshAll() end
     end)
 
+    local musicHeader = panel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    musicHeader:SetPoint("TOPLEFT", colorLabel, "BOTTOMLEFT", 0, -34)
+    musicHeader:SetText("Brutosaur Music")
+    musicHeader:SetTextColor(1, 0.82, 0)
+
+    local musicLabel = panel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    musicLabel:SetPoint("TOPLEFT", musicHeader, "BOTTOMLEFT", 0, -14)
+    musicLabel:SetText("Enable Jurassic pack while mounted")
+
+    local musicCheck = CreateFrame("CheckButton", nil, panel, "UICheckButtonTemplate")
+    musicCheck:SetSize(24, 24)
+    musicCheck:SetPoint("LEFT", musicLabel, "RIGHT", 8, 0)
+    musicCheck:SetScript("OnClick", function(self)
+        BT.db.settings.musicEnabled = self:GetChecked() and true or false
+        if BT.UpdateMusic then BT.UpdateMusic() end
+    end)
+
     local function Refresh()
+        musicCheck:SetChecked(BT.db.settings.musicEnabled == true)
         local goal, current, remaining = BT:GetGoalProgress()
         goalLine:SetText("Goal: " .. GUI.FormatMoney(goal))
         currentLine:SetText("Current total: " .. GUI.FormatMoney(current))

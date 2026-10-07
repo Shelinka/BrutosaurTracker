@@ -57,6 +57,7 @@ local function GetDefaults()
             graphColor = { r = 0.2, g = 0.85, b = 0.3 },
             graphColorMode = "custom",
             SetLedgerTabOnlyGold = false,
+            musicEnabled = false,
         },
 
         warbandGold = 0,

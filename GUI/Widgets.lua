@@ -62,6 +62,7 @@ function GUI.CreateSharedRangeDropdown(parent, onChange)
         for _, opt in ipairs(GUI.RANGE_OPTIONS) do
             local info = UIDropDownMenu_CreateInfo()
             info.text = opt.label
+            info.checked = (BT.db.settings.graphRangeDays or 7) == opt.days
             info.func = function()
                 BT.db.settings.graphRangeDays = opt.days
                 dropdown:RefreshText()
