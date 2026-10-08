@@ -28,7 +28,7 @@ function GUI.FormatMoneyShort(copper)
     local gold = math.floor(math.abs(copper or 0) / 10000)
     local sign = (copper or 0) < 0 and "-" or ""
     if gold >= 1000000 then
-        return string.format("%s%.1fM", sign, gold / 1000000)
+        return string.format("%s%.3fM", sign, gold / 1000000)
     elseif gold >= 1000 then
         return string.format("%s%.1fk", sign, gold / 1000)
     end
