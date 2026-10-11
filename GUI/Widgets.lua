@@ -55,6 +55,12 @@ GUI.RANGE_OPTIONS = {
     { label = "All Time", days = 3650 },
 }
 
+GUI.TOTAL_DISPLAY_OPTIONS = {
+    { key = "account", label = "Total account gold" },
+    { key = "split", label = "Total character gold | Warband gold" },
+    { key = "all", label = "Total character gold | Warband gold | Total account gold" },
+}
+
 function GUI.CreateSharedRangeDropdown(parent, onChange)
     local dropdown = CreateFrame("Frame", nil, parent, "UIDropDownMenuTemplate")
 

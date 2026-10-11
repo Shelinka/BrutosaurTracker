@@ -20,12 +20,8 @@ function GUI.CreateSettingsTab(parent)
     local panel = CreateFrame("Frame", nil, parent)
     panel:SetAllPoints()
 
-    local title = panel:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-    title:SetPoint("TOPLEFT", 16, -16)
-    title:SetText("Settings")
-
     local goalHeader = panel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    goalHeader:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -18)
+    goalHeader:SetPoint("TOPLEFT", 16, -16)
     goalHeader:SetText("Gold Goal")
     goalHeader:SetTextColor(1, 0.82, 0)
 
@@ -166,8 +162,47 @@ function GUI.CreateSettingsTab(parent)
         if BT.mainFrame and BT.mainFrame.RefreshAll then BT.mainFrame.RefreshAll() end
     end)
 
+    local totalHeader = panel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    totalHeader:SetPoint("TOPLEFT", colorLabel, "BOTTOMLEFT", 0, -34)
+    totalHeader:SetText("Gold History")
+    totalHeader:SetTextColor(1, 0.82, 0)
+
+    local totalLabel = panel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    totalLabel:SetPoint("TOPLEFT", totalHeader, "BOTTOMLEFT", 0, -14)
+    totalLabel:SetText("Total gold display value:")
+
+    local totalDropdown = CreateFrame("Frame", nil, panel, "UIDropDownMenuTemplate")
+    totalDropdown:SetPoint("LEFT", totalLabel, "RIGHT", -6, -2)
+    UIDropDownMenu_SetWidth(totalDropdown, 340)
+
+    local function RefreshTotalDropdownText()
+        local mode = BT.db.settings.totalDisplayMode or "split"
+        for _, opt in ipairs(GUI.TOTAL_DISPLAY_OPTIONS) do
+            if opt.key == mode then
+                UIDropDownMenu_SetText(totalDropdown, opt.label)
+                return
+            end
+        end
+        UIDropDownMenu_SetText(totalDropdown, GUI.TOTAL_DISPLAY_OPTIONS[2].label)
+    end
+
+    UIDropDownMenu_Initialize(totalDropdown, function()
+        local current = BT.db.settings.totalDisplayMode or "split"
+        for _, opt in ipairs(GUI.TOTAL_DISPLAY_OPTIONS) do
+            local info = UIDropDownMenu_CreateInfo()
+            info.text = opt.label
+            info.checked = (current == opt.key)
+            info.func = function()
+                BT.db.settings.totalDisplayMode = opt.key
+                RefreshTotalDropdownText()
+                if BT.mainFrame and BT.mainFrame.RefreshAll then BT.mainFrame.RefreshAll() end
+            end
+            UIDropDownMenu_AddButton(info)
+        end
+    end)
+
     local musicHeader = panel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    musicHeader:SetPoint("TOPLEFT", colorLabel, "BOTTOMLEFT", 0, -34)
+    musicHeader:SetPoint("TOPLEFT", totalLabel, "BOTTOMLEFT", 0, -34)
     musicHeader:SetText("Brutosaur Music")
     musicHeader:SetTextColor(1, 0.82, 0)
 
@@ -184,6 +219,7 @@ function GUI.CreateSettingsTab(parent)
     end)
 
     local function Refresh()
+        RefreshTotalDropdownText()
         musicCheck:SetChecked(BT.db.settings.musicEnabled == true)
         local goal, current, remaining = BT:GetGoalProgress()
         goalLine:SetText("Goal: " .. GUI.FormatMoney(goal))

@@ -44,8 +44,32 @@ function GUI.CreateGraphTab(parent)
             charactersTotal = charactersTotal + entry.gold
         end
         local warbandTotal = BT:GetWarbandGold()
-        totalLabel:SetText(string.format("Total Gold: %s | %s",
-            GUI.FormatMoney(charactersTotal), GUI.FormatMoney(warbandTotal)))
+        local accountTotal = charactersTotal + warbandTotal
+
+        local mode = BT.db.settings.totalDisplayMode
+        local text
+        if mode == "account" then
+            text = string.format("Total Gold: %s", GUI.FormatMoney(accountTotal))
+        elseif mode == "all" then
+            text = string.format("Total Gold: %s | %s | %s",
+                GUI.FormatMoney(charactersTotal), GUI.FormatMoney(warbandTotal), GUI.FormatMoney(accountTotal))
+        else
+            text = string.format("Total Gold: %s | %s",
+                GUI.FormatMoney(charactersTotal), GUI.FormatMoney(warbandTotal))
+        end
+
+        totalLabel:SetFontObject("GameFontNormalLarge")
+        totalLabel:SetText(text)
+        local panelWidth = panel:GetWidth()
+        if panelWidth and panelWidth > 0 then
+            local dropdownWidth = dropdown:GetWidth()
+            if not dropdownWidth or dropdownWidth <= 0 then dropdownWidth = 180 end
+            local available = panelWidth - 16 - dropdownWidth - 16
+            if totalLabel:GetStringWidth() > available then
+                totalLabel:SetFontObject("GameFontNormal")
+                totalLabel:SetText(text)
+            end
+        end
 
         local charCount = 0
         for _ in pairs(BT.db.characters) do charCount = charCount + 1 end

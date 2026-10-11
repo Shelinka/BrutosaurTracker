@@ -58,6 +58,7 @@ local function GetDefaults()
             graphColorMode = "custom",
             SetLedgerTabOnlyGold = false,
             musicEnabled = false,
+            totalDisplayMode = "split",
         },
 
         warbandGold = 0,
