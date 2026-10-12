@@ -71,6 +71,10 @@ local function GetDefaults()
 
         itemSales = {},
 
+        itemTransactions = {},
+
+        pendingCODSales = {},
+
         itemIconCache = {},
 
         blackMarketPendingBids = {},

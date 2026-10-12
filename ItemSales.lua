@@ -65,33 +65,109 @@ local function ResolveIcon(itemName)
     return icon
 end
 
-local function HandleSellerInvoice(mailIndex)
+local processedMailTransactions = {}
+
+local function GetMailTransactionTime(daysLeft, maxDays)
+    return time() + ((tonumber(daysLeft) or maxDays) - maxDays) * 86400
+end
+
+local function HandleAuctionInvoice(mailIndex, action)
     local invoiceType, itemName, playerName, bid, buyout, deposit, consignment,
         moneyDelay, etaHour, etaMin, count = GetInboxInvoiceInfo(mailIndex)
 
-    if invoiceType ~= "seller" then return end
+    local transactionType
+    if invoiceType == "seller" and (action == "money" or action == "auto") then
+        transactionType = "sale"
+    elseif invoiceType == "buyer" and (action == "item" or action == "auto") then
+        transactionType = "purchase"
+    else
+        return
+    end
     if not itemName or not bid or bid <= 0 then return end
 
     local quantity = (count and count > 0) and count or 1
-    BT:RecordItemSale(itemName, ResolveIcon(itemName), quantity, bid)
-end
+    local signature = table.concat({ mailIndex, invoiceType, itemName, bid, quantity }, "|")
+    if processedMailTransactions[signature] then return end
+    processedMailTransactions[signature] = true
 
-
-if TakeInboxMoney then
-    local original = TakeInboxMoney
-    TakeInboxMoney = function(index)
-        pcall(HandleSellerInvoice, index)
-        return original(index)
+    local itemID = GetItemInfoInstant and GetItemInfoInstant(itemName)
+    local _, _, _, _, _, _, daysLeft = GetInboxHeaderInfo(mailIndex)
+    if BT.RecordItemTransaction then
+        BT:RecordItemTransaction(transactionType, itemID, itemName, quantity, bid, "auction_house",
+            GetMailTransactionTime(daysLeft, 30))
+    end
+    if transactionType == "sale" then
+        BT:RecordItemSale(itemName, ResolveIcon(itemName), quantity, bid)
     end
 end
 
-if AutoLootMailItem then
-    local original = AutoLootMailItem
-    AutoLootMailItem = function(index)
-        pcall(HandleSellerInvoice, index)
-        return original(index)
+local function HandleCODMail(mailIndex, action)
+    if action == "money" then return end
+    local _, _, _, _, _, codAmount, daysLeft = GetInboxHeaderInfo(mailIndex)
+    if not codAmount or codAmount <= 0 then return end
+
+    local itemID, itemName, quantity
+    for attachment = 1, (ATTACHMENTS_MAX_RECEIVE or 12) do
+        local name, _, count = GetInboxItem(mailIndex, attachment)
+        if not name then break end
+        local link = GetInboxItemLink and GetInboxItemLink(mailIndex, attachment)
+        local currentID = GetItemInfoInstant and GetItemInfoInstant(link or name)
+        if not currentID or (itemID and itemID ~= currentID) then return end
+        itemID = currentID
+        itemName = itemName or name
+        quantity = (quantity or 0) + (tonumber(count) or 0)
+    end
+    if not itemID or not quantity or quantity <= 0 then return end
+
+    local signature = table.concat({ mailIndex, "cod", itemID, codAmount, quantity }, "|")
+    if processedMailTransactions[signature] then return end
+    processedMailTransactions[signature] = true
+    if BT.RecordItemTransaction then
+        BT:RecordItemTransaction("purchase", itemID, itemName, quantity, codAmount, "cod_mail",
+            GetMailTransactionTime(daysLeft, 3))
     end
 end
+
+local function NormalizeMailName(name)
+    if not name then return "" end
+    if Ambiguate then
+        name = Ambiguate(name, "none")
+    end
+    return name:lower()
+end
+
+local function HandleCODSalePayment(mailIndex, action)
+    if action ~= "money" then return end
+    local _, _, sender, _, money = GetInboxHeaderInfo(mailIndex)
+    if not sender or not money or money <= 0 then return end
+
+    local normalizedSender = NormalizeMailName(sender)
+    for index, pending in ipairs(BT.db.pendingCODSales) do
+        if NormalizeMailName(pending.recipient) == normalizedSender and pending.totalCopper == money then
+            if BT.RecordItemTransaction then
+                BT:RecordItemTransaction("sale", pending.itemID, pending.itemName, pending.quantity,
+                    pending.totalCopper, "cod_mail", time(), pending.character)
+            end
+            table.remove(BT.db.pendingCODSales, index)
+            return
+        end
+    end
+end
+
+local function WrapMailAction(functionName, action)
+    local original = _G[functionName]
+    if not original then return end
+    _G[functionName] = function(mailIndex, ...)
+        pcall(HandleAuctionInvoice, mailIndex, action)
+        pcall(HandleCODMail, mailIndex, action)
+        pcall(HandleCODSalePayment, mailIndex, action)
+        return original(mailIndex, ...)
+    end
+end
+
+WrapMailAction("TakeInboxMoney", "money")
+WrapMailAction("TakeInboxItem", "item")
+WrapMailAction("AutoLootMailItem", "auto")
 
 
 local iconFrame = CreateFrame("Frame")
@@ -104,10 +180,13 @@ end
 TryRegister("PLAYER_LOGIN")
 TryRegister("BAG_UPDATE_DELAYED")
 TryRegister("GET_ITEM_INFO_RECEIVED")
+TryRegister("MAIL_INBOX_UPDATE")
 
 iconFrame:SetScript("OnEvent", function(self, event, ...)
     if event == "PLAYER_LOGIN" or event == "BAG_UPDATE_DELAYED" then
         ScanBagsForIcons()
+    elseif event == "MAIL_INBOX_UPDATE" then
+        wipe(processedMailTransactions)
     elseif event == "GET_ITEM_INFO_RECEIVED" then
         local itemID, success = ...
         if success and pendingBackfill[itemID] then
