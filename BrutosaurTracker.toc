@@ -1,8 +1,8 @@
-## Interface: 120100
+## Interface: 120100, 120150
 ## Title: Brutosaur Tracker
 ## Notes: Reins of the Mighty Caravan Brutosaur will be yours one day, right?
 ## Author: Shelinka
-## Version: 1.1.0
+## Version: 1.1.1
 ## IconTexture: Interface\Icons\inv_brontosaurusmount
 ## SavedVariables: BrutosaurTrackerDB
 ## X-Curse-Project-Name: Brutosaur Tracker

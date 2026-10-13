@@ -116,6 +116,16 @@ function BT:GetCharDisplayName()
     return name .. "-" .. realm
 end
 
+function BT:QueryItemInfo(itemRef)
+    local api = C_Item and C_Item.GetItemInfo or _G.GetItemInfo
+    if api then return api(itemRef) end
+end
+
+function BT:QueryItemInfoInstant(itemRef)
+    local api = C_Item and C_Item.GetItemInfoInstant or _G.GetItemInfoInstant
+    if api then return api(itemRef) end
+end
+
 function BT:UpdateCharacterRecord()
     if not self.db then self:InitDB() end
     local guid = self:GetCharGUID()

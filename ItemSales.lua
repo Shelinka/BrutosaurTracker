@@ -32,7 +32,7 @@ end
 
 function BT:RememberItemIcon(itemID)
     if not itemID then return end
-    local name, _, _, _, _, _, _, _, _, icon = GetItemInfo(itemID)
+    local name, _, _, _, _, _, _, _, _, icon = self:QueryItemInfo(itemID)
     if name and icon then
         local cached = self.db.itemIconCache[name]
         if not cached or cached.icon ~= icon then
@@ -61,7 +61,7 @@ local function ResolveIcon(itemName)
     local cached = BT.db.itemIconCache[itemName]
     if cached then return cached.icon end
 
-    local _, _, _, _, _, _, _, _, _, icon = GetItemInfo(itemName)
+    local _, _, _, _, _, _, _, _, _, icon = BT:QueryItemInfo(itemName)
     return icon
 end
 
@@ -90,7 +90,7 @@ local function HandleAuctionInvoice(mailIndex, action)
     if processedMailTransactions[signature] then return end
     processedMailTransactions[signature] = true
 
-    local itemID = GetItemInfoInstant and GetItemInfoInstant(itemName)
+    local itemID = BT:QueryItemInfoInstant(itemName)
     local _, _, _, _, _, _, daysLeft = GetInboxHeaderInfo(mailIndex)
     if BT.RecordItemTransaction then
         BT:RecordItemTransaction(transactionType, itemID, itemName, quantity, bid, "auction_house",
@@ -111,7 +111,7 @@ local function HandleCODMail(mailIndex, action)
         local name, _, count = GetInboxItem(mailIndex, attachment)
         if not name then break end
         local link = GetInboxItemLink and GetInboxItemLink(mailIndex, attachment)
-        local currentID = GetItemInfoInstant and GetItemInfoInstant(link or name)
+        local currentID = BT:QueryItemInfoInstant(link or name)
         if not currentID or (itemID and itemID ~= currentID) then return end
         itemID = currentID
         itemName = itemName or name

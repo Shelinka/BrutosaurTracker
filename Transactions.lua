@@ -12,14 +12,14 @@ local function GetItemDetails(itemRef, fallbackName)
     if type(itemRef) == "string" then
         itemName = itemName or itemRef:match("%[(.-)%]")
     end
-    if not itemID and itemRef and GetItemInfoInstant then
-        itemID = GetItemInfoInstant(itemRef)
+    if not itemID and itemRef then
+        itemID = BT:QueryItemInfoInstant(itemRef)
     end
     if not itemID and itemName and BT.db and BT.db.itemIconCache[itemName] then
         itemID = BT.db.itemIconCache[itemName].id
     end
-    if itemID and not itemName and GetItemInfo then
-        itemName = GetItemInfo(itemID)
+    if itemID and not itemName then
+        itemName = BT:QueryItemInfo(itemID)
     end
     return itemID, itemName
 end
@@ -32,8 +32,8 @@ function BT:RecordItemTransaction(transactionType, itemID, itemName, quantity, t
     totalCopper = tonumber(totalCopper)
     if not itemID or not quantity or quantity <= 0 or not totalCopper or totalCopper < 0 then return end
 
-    if not itemName and GetItemInfo then
-        itemName = GetItemInfo(itemID)
+    if not itemName then
+        itemName = self:QueryItemInfo(itemID)
     end
 
     local characterName = character and character.name or UnitName("player")
@@ -107,7 +107,7 @@ local function OnUseContainerItem(bag, slot)
     if not MerchantFrame or not MerchantFrame:IsShown() or not C_Container then return end
     local itemLink = C_Container.GetContainerItemLink(bag, slot)
     if not itemLink then return end
-    local itemName, _, _, _, _, _, _, _, _, _, sellPrice = GetItemInfo(itemLink)
+    local itemName, _, _, _, _, _, _, _, _, _, sellPrice = BT:QueryItemInfo(itemLink)
     local itemInfo = C_Container.GetContainerItemInfo(bag, slot)
     local quantity = itemInfo and itemInfo.stackCount or 1
     local itemID, resolvedName = GetItemDetails(itemLink, itemName)
