@@ -250,6 +250,8 @@ SlashCmdList["BRUTOSAURTRACKER"] = function(msg)
         print("  Warband bank (live): " .. fmt(BT:GetWarbandGold()))
         print("  Total: " .. fmt(BT:GetTotalGold()))
         print("  SavedVariables account folder: " .. tostring(BrutosaurTrackerDB and "loaded" or "MISSING"))
+    elseif msg == "strider" then
+        if BT.OpenStriderConfig then BT:OpenStriderConfig() end
     else
         BT:ToggleMainFrame()
     end
