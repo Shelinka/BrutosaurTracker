@@ -2,6 +2,7 @@ local ADDON_NAME, BT = ...
 
 local MOUNT_SPELL_ID = 1313788 -- Sporebearer Fungal Strider
 local NPC_ID = 273832          -- Hoshena
+local ZONE_ID = 2576
 local SESSION_TIMEOUT = 20
 
 local PASSENGERS = {
@@ -32,9 +33,18 @@ local function HasMount()
     return isCollected == true
 end
 
+local function IsSecret(v)
+    return issecretvalue and issecretvalue(v) or false
+end
+
+local function InStriderZone()
+    local mapID = C_Map and C_Map.GetBestMapForUnit and C_Map.GetBestMapForUnit("player")
+    return mapID ~= nil and not IsSecret(mapID) and mapID == ZONE_ID
+end
+
 local function GetNPCID()
     local guid = UnitGUID("npc")
-    if type(guid) ~= "string" then return nil end
+    if type(guid) ~= "string" or IsSecret(guid) then return nil end
     local unitType, _, _, _, _, id = strsplit("-", guid)
     if unitType ~= "Creature" then return nil end
     return tonumber(id)
@@ -121,7 +131,7 @@ local lastActivity = 0
 
 local function FindOption(options, text)
     for _, opt in ipairs(options) do
-        if opt.name and opt.name:lower():find(text, 1, true) then return opt end
+        if opt.name and not IsSecret(opt.name) and opt.name:lower():find(text, 1, true) then return opt end
     end
 end
 
@@ -132,7 +142,7 @@ end
 
 local function OnGossipShow()
     local s = GetSettings()
-    if not s then return end
+    if not s or not InStriderZone() then return end
     local npcID = GetNPCID()
     if npcID ~= NPC_ID or not HasMount() then return end
 
