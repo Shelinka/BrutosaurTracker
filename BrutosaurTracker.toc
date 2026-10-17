@@ -1,4 +1,4 @@
-## Interface: 120100, 120105
+## Interface: 120105
 ## Title: Brutosaur Tracker
 ## Notes: Reins of the Mighty Caravan Brutosaur will be yours one day, right?
 ## Author: Shelinka
