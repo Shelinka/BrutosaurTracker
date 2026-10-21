@@ -71,33 +71,33 @@ local function CreateSeatDropdown(parent, label, seat, y)
     return dd
 end
 
-function BT:OpenStriderConfig()
+function BT:ShowStriderPanel()
     local s = GetSettings()
-    if not s then return end
+    if not s or not GossipFrame then return end
     s.left = s.left or "NONE"
     s.right = s.right or "NONE"
 
     if not configFrame then
-        local f = CreateFrame("Frame", "BrutosaurTrackerStriderConfig", UIParent, "BasicFrameTemplateWithInset")
+        local f = CreateFrame("Frame", "BrutosaurTrackerStriderConfig", GossipFrame, "BasicFrameTemplateWithInset")
         f:SetSize(280, 190)
-        f:SetPoint("CENTER")
-        f:SetFrameStrata("DIALOG")
-        f:SetMovable(true)
+        f:SetPoint("TOPLEFT", GossipFrame, "TOPRIGHT", 0, 0)
         f:EnableMouse(true)
-        f:RegisterForDrag("LeftButton")
-        f:SetScript("OnDragStart", f.StartMoving)
-        f:SetScript("OnDragStop", f.StopMovingOrSizing)
         f.TitleText:SetText("Fungal Strider Seats")
-        tinsert(UISpecialFrames, f:GetName())
+        f.CloseButton:Hide()
 
         f.left = CreateSeatDropdown(f, "Left Seat option:", "left", -35)
         f.right = CreateSeatDropdown(f, "Right Seat option:", "right", -90)
 
-        local done = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
-        done:SetSize(100, 24)
-        done:SetPoint("BOTTOM", 0, 12)
-        done:SetText("Done")
-        done:SetScript("OnClick", function() f:Hide() end)
+        local back = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
+        back:SetSize(100, 24)
+        back:SetPoint("BOTTOM", 0, 12)
+        back:SetText("Back")
+        back:SetScript("OnClick", function()
+            local st = GetSettings()
+            st.enabled = false
+            f:Hide()
+            StaticPopup_Show("BRUTOSAUR_STRIDER_AUTOMATE")
+        end)
 
         configFrame = f
     end
@@ -109,11 +109,23 @@ function BT:OpenStriderConfig()
     configFrame:Show()
 end
 
+function BT:OpenStriderConfig()
+    local s = GetSettings()
+    if not s then return end
+    s.asked = true
+    s.enabled = true
+    if GossipFrame and GossipFrame:IsShown() and InStriderZone() and GetNPCID() == NPC_ID and HasMount() then
+        self:ShowStriderPanel()
+    else
+        print("|cff20d947Brutosaur Tracker|r - Strider seat automation enabled. Talk to Hoshena to choose your seats.")
+    end
+end
+
 StaticPopupDialogs["BRUTOSAUR_STRIDER_AUTOMATE"] = {
     text = "Brutosaur Tracker: Do you want to automate the Fungal Strider seat configuration on all characters?",
     button1 = YES,
     button2 = NO,
-    OnAccept = function() BT:OpenStriderConfig() end,
+    OnAccept = function() BT:ShowStriderPanel() end,
     OnCancel = function()
         local s = GetSettings()
         if s then s.asked = true; s.enabled = false end
@@ -142,16 +154,25 @@ end
 
 local function OnGossipShow()
     local s = GetSettings()
-    if not s or not InStriderZone() then return end
+    if not s then return end
+    if not InStriderZone() then
+        if configFrame then configFrame:Hide() end
+        return
+    end
     local npcID = GetNPCID()
-    if npcID ~= NPC_ID or not HasMount() then return end
+    if npcID ~= NPC_ID or not HasMount() then
+        if configFrame then configFrame:Hide() end
+        return
+    end
 
     if not s.asked then
         s.asked = true
         StaticPopup_Show("BRUTOSAUR_STRIDER_AUTOMATE")
         return
     end
-    if not s.enabled or IsShiftKeyDown() then return end
+    if not s.enabled then return end
+    BT:ShowStriderPanel()
+    if IsShiftKeyDown() then return end
 
     if GetTime() - lastActivity > SESSION_TIMEOUT then
         wipe(done)
